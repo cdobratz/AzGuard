@@ -1,0 +1,17 @@
+ollama:
+  base_url: http://localhost:11434
+  model: codellama
+
+anthropic:
+  api_key: ""
+  model: claude-3-sonnet-20240229
+
+azure:
+  auth_method: cli
+  subscription_id: ""
+  tenant_id: ""
+  client_id: ""
+  client_secret: ""
+
+storage:
+  path: ~/.agent/data.db
