@@ -11,6 +11,8 @@ type Config struct {
 	Ollama    OllamaConfig    `mapstructure:"ollama"`
 	Anthropic AnthropicConfig  `mapstructure:"anthropic"`
 	Azure     AzureConfig     `mapstructure:"azure"`
+	AWS       AWSConfig       `mapstructure:"aws"`
+	GCP       GCPConfig       `mapstructure:"gcp"`
 	Storage   StorageConfig   `mapstructure:"storage"`
 }
 
@@ -30,6 +32,17 @@ type AzureConfig struct {
 	TenantID       string `mapstructure:"tenant_id"`
 	ClientID       string `mapstructure:"client_id"`
 	ClientSecret   string `mapstructure:"client_secret"`
+}
+
+type AWSConfig struct {
+	AccessKey    string `mapstructure:"access_key"`
+	SecretKey    string `mapstructure:"secret_key"`
+	SessionToken string `mapstructure:"session_token"`
+	Region       string `mapstructure:"region"`
+}
+
+type GCPConfig struct {
+	ProjectID string `mapstructure:"project_id"`
 }
 
 type StorageConfig struct {

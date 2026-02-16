@@ -13,5 +13,14 @@ azure:
   client_id: ""
   client_secret: ""
 
+aws:
+  access_key: ""
+  secret_key: ""
+  session_token: ""
+  region: us-east-1
+
+gcp:
+  project_id: ""
+
 storage:
   path: ~/.agent/data.db
