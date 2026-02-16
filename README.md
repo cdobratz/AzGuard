@@ -25,6 +25,8 @@
 | `agent cost history` | Show historical cost trends |
 | `agent cost forecast` | Show cost prediction for next month |
 | `agent cost trend` | Show month-over-month trend analysis |
+| `agent cost alert` | Manage Budget Alerts
+| `agent cost report` | Generate report
 
 ### Other Commands
 | Command | Description |
@@ -40,7 +42,8 @@
 agent config list
 agent config get azure.subscription_id
 agent config set azure.subscription_id <id>
-
+```
+```bash
 # Cost tracking
 agent cost current                 # Current month
 agent cost fetch                  # Store costs locally
@@ -48,7 +51,8 @@ agent cost summary                # From local DB
 agent cost history               # Historical trends
 agent cost trend                 # Trend analysis
 agent cost forecast              # Next month prediction
-
+```
+```bash
 # Output formats
 agent cost current -o json       # JSON output
 agent cost current -o csv        # CSV export
