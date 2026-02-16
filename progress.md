@@ -157,9 +157,31 @@ A cross-platform CLI tool for software development and cloud cost management, ta
   - Auto-detects shell based on environment
 
 ### Phase 5: Multi-Cloud Support
-- [ ] AWS Cost Explorer integration
-- [ ] Google Cloud Billing integration
-- [ ] Unified cost dashboard
+- [x] AWS Cost Explorer integration
+- [x] Google Cloud Billing integration
+- [x] Unified cost dashboard
+
+#### New Features Added
+- **Multi-Cloud Providers**
+  - Azure (Cost Management API)
+  - AWS (Cost Explorer API)
+  - GCP (Cloud Billing API)
+
+- **Cloud Commands** (`agent cloud`)
+  - `agent cloud list` - List configured providers
+  - `agent cloud all` - Show costs from all providers
+
+- **Configuration**
+  ```
+  agent config set aws.access_key <key>
+  agent config set aws.secret_key <secret>
+  agent config set aws.region us-east-1
+  agent config set gcp.project_id <project-id>
+  ```
+
+- **Environment Variables**
+  - AWS: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`
+  - GCP: `GCP_PROJECT_ID`, `GOOGLE_AUTH_TOKEN`
 
 ### Phase 6: REST API
 - [ ] FastAPI server

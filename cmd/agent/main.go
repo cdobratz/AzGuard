@@ -68,6 +68,7 @@ func main() {
 	rootCmd.AddCommand(configCmd())
 	rootCmd.AddCommand(costCmd())
 	rootCmd.AddCommand(devCmd())
+	rootCmd.AddCommand(cloudCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -582,6 +583,91 @@ func devCmd() *cobra.Command {
 	cmd.Flags().StringP("language", "l", "python", "Programming language for code generation")
 	cmd.Flags().StringP("output", "o", "", "Output file path")
 	cmd.Flags().StringP("shell", "s", "", "Shell to use: powershell, bash, az, cmd")
+
+	return cmd
+}
+
+func cloudCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "cloud",
+		Short: "Multi-cloud cost management",
+	}
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "list",
+		Short: "List configured cloud providers",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Println("\n☁️  Configured Cloud Providers")
+			fmt.Println("─────────────────────────────")
+
+			if cfg.Azure.SubscriptionID != "" {
+				fmt.Printf("✅ Azure: %s\n", cfg.Azure.SubscriptionID)
+			} else {
+				fmt.Println("❌ Azure: Not configured")
+			}
+
+			if cfg.AWS.Region != "" {
+				fmt.Printf("✅ AWS: %s\n", cfg.AWS.Region)
+			} else {
+				fmt.Println("❌ AWS: Not configured")
+			}
+
+			if cfg.GCP.ProjectID != "" {
+				fmt.Printf("✅ GCP: %s\n", cfg.GCP.ProjectID)
+			} else {
+				fmt.Println("❌ GCP: Not configured")
+			}
+
+			fmt.Println("\nUse 'agent config set' to configure providers")
+			return nil
+		},
+	})
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "all",
+		Short: "Show costs from all configured providers",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Println("\n☁️  Multi-Cloud Cost Summary")
+			fmt.Println("═══════════════════════════════")
+
+			providers := []string{}
+
+			if cfg.Azure.SubscriptionID != "" {
+				providers = append(providers, "azure")
+			}
+			if cfg.AWS.Region != "" {
+				providers = append(providers, "aws")
+			}
+			if cfg.GCP.ProjectID != "" {
+				providers = append(providers, "gcp")
+			}
+
+			if len(providers) == 0 {
+				fmt.Println("No cloud providers configured")
+				return nil
+			}
+
+			var totalCost float64
+
+			for _, p := range providers {
+				switch p {
+				case "azure":
+					summary, _ := costSvc.GetCostSummary(cost.CostFilter{})
+					if summary != nil {
+						fmt.Printf("\n📘 Azure: $%.2f %s\n", summary.TotalCost, summary.Currency)
+						totalCost += summary.TotalCost
+					}
+				case "aws":
+					fmt.Printf("\n📙 AWS: Configure with agent config set aws.access_key <key>\n")
+				case "gcp":
+					fmt.Printf("\n📗 GCP: Configure with agent config set gcp.project_id <id>\n")
+				}
+			}
+
+			fmt.Printf("\n💰 Total (all providers): $%.2f\n", totalCost)
+			return nil
+		},
+	})
 
 	return cmd
 }
