@@ -123,12 +123,38 @@ A cross-platform CLI tool for software development and cloud cost management, ta
   - `agent cost alert delete [name]` - Remove alert
 
 ### Phase 4: Software Development Tools
-- [ ] Code generation (using LLM)
-- [ ] Code review (using LLM)
-- [ ] Test execution
-- [ ] PowerShell execution
-- [ ] Azure CLI integration
-- [ ] Batch script execution
+- [x] Code generation (using LLM)
+- [x] Code review (using LLM)
+- [x] Test execution
+- [x] PowerShell execution
+- [x] Azure CLI integration
+- [x] Batch script execution
+
+#### New Features Added
+- **LLM Provider Integration**
+  - Ollama (local models)
+  - Anthropic Claude API
+  - Auto-fallback between providers
+
+- **Code Generation** (`agent dev build`)
+  - `agent dev build "create a hello world function" -l python`
+  - `agent dev build "api endpoint" -o output.py`
+  - Supports multiple languages
+
+- **Code Review** (`agent dev review`)
+  - `agent dev review path/to/file.py`
+  - AI-powered code analysis
+  - Issue detection
+
+- **Test Execution** (`agent dev test`)
+  - `agent dev test path/to/test.py`
+  - Supports: Python (pytest), JavaScript (npm), Go (go test), Rust (cargo test)
+
+- **Shell Execution** (`agent dev run`)
+  - `agent dev run "command" -s powershell`
+  - `agent dev run "command" -s bash`
+  - `agent dev run "command" -s az` (Azure CLI)
+  - Auto-detects shell based on environment
 
 ### Phase 5: Multi-Cloud Support
 - [ ] AWS Cost Explorer integration

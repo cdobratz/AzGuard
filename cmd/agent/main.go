@@ -5,11 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/agent/agent/internal/cloud/azure"
 	"github.com/agent/agent/internal/config"
 	"github.com/agent/agent/internal/cost"
+	"github.com/agent/agent/internal/executors"
+	"github.com/agent/agent/internal/llm"
 	"github.com/agent/agent/internal/storage"
+	"github.com/agent/agent/internal/tools"
 	"github.com/spf13/cobra"
 )
 
@@ -63,6 +67,7 @@ func main() {
 
 	rootCmd.AddCommand(configCmd())
 	rootCmd.AddCommand(costCmd())
+	rootCmd.AddCommand(devCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -439,6 +444,144 @@ func alertCmd() *cobra.Command {
 			return nil
 		},
 	})
+
+	return cmd
+}
+
+func devCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "dev",
+		Short: "Software development tools",
+	}
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "build [task]",
+		Short: "Generate code using AI",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			provider, err := llm.NewProvider("ollama", cfg.Ollama.BaseURL, cfg.Ollama.Model, cfg.Anthropic.APIKey)
+			if err != nil {
+				provider, err = llm.NewProvider("anthropic", "", cfg.Anthropic.Model, cfg.Anthropic.APIKey)
+				if err != nil {
+					return fmt.Errorf("no LLM provider available: %w", err)
+				}
+			}
+
+			gen := tools.NewCodeGenerator(provider)
+
+			language, _ := cmd.Flags().GetString("language")
+			output, _ := cmd.Flags().GetString("output")
+
+			req := tools.GenerateRequest{
+				Language: language,
+				Task:     strings.Join(args, " "),
+				Path:     output,
+			}
+
+			code, err := gen.Generate(req)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println(code)
+			return nil
+		},
+	})
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "review [path]",
+		Short: "Review code using AI",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			provider, err := llm.NewProvider("ollama", cfg.Ollama.BaseURL, cfg.Ollama.Model, cfg.Anthropic.APIKey)
+			if err != nil {
+				provider, err = llm.NewProvider("anthropic", "", cfg.Anthropic.Model, cfg.Anthropic.APIKey)
+				if err != nil {
+					return fmt.Errorf("no LLM provider available: %w", err)
+				}
+			}
+
+			reviewer := tools.NewCodeReviewer(provider)
+
+			result, err := reviewer.Review(tools.ReviewRequest{Path: args[0]})
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("\n📝 Code Review: %s\n", args[0])
+			fmt.Println("─────────────────────────────────")
+			fmt.Printf("%s\n\n", result.Summary)
+
+			if len(result.Issues) > 0 {
+				fmt.Println("Issues found:")
+				for _, issue := range result.Issues {
+					fmt.Printf("  • %s\n", issue)
+				}
+			}
+			return nil
+		},
+	})
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "test [path]",
+		Short: "Run tests",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			runner := tools.NewTestRunner()
+
+			result, err := runner.Run(args[0])
+			if err != nil {
+				return err
+			}
+
+			if result.Passed {
+				fmt.Println("✅ " + result.Summary)
+			} else {
+				fmt.Println("❌ " + result.Summary)
+			}
+
+			if outputFormat == "json" {
+				json.NewEncoder(os.Stdout).Encode(result)
+			}
+			return nil
+		},
+	})
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "run [command]",
+		Short: "Run a command in PowerShell, Bash, or Azure CLI",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			shell, _ := cmd.Flags().GetString("shell")
+			command := strings.Join(args, " ")
+
+			var exec executor.Executor
+			switch shell {
+			case "powershell", "pwsh":
+				exec = executor.NewPowerShellExecutor()
+			case "bash", "sh":
+				exec = executor.NewBashExecutor()
+			case "cmd":
+				exec = executor.NewCmdExecutor()
+			case "az", "azure":
+				exec = executor.NewAzureCLIExecutor()
+			default:
+				exec = executor.AutoDetectExecutor()
+			}
+
+			ctx := context.Background()
+			result, err := exec.Execute(ctx, command)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			}
+			fmt.Print(result.Output)
+			return nil
+		},
+	})
+
+	cmd.Flags().StringP("language", "l", "python", "Programming language for code generation")
+	cmd.Flags().StringP("output", "o", "", "Output file path")
+	cmd.Flags().StringP("shell", "s", "", "Shell to use: powershell, bash, az, cmd")
 
 	return cmd
 }
