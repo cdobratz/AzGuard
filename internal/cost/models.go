@@ -2,6 +2,8 @@ package cost
 
 import (
 	"time"
+
+	"github.com/agent/agent/internal/storage"
 )
 
 type CostSummary struct {
@@ -11,6 +13,8 @@ type CostSummary struct {
 	ByService       map[string]float64 `json:"by_service"`
 	ByResourceGroup map[string]float64 `json:"by_resource_group"`
 	Forecast        *Forecast         `json:"forecast,omitempty"`
+	MonthlyBreakdown []storage.MonthlyCost `json:"monthly_breakdown,omitempty"`
+	Trend           *TrendAnalysis    `json:"trend,omitempty"`
 }
 
 type Forecast struct {

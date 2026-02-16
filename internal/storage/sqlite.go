@@ -219,3 +219,54 @@ func (db *DB) GetAggregatedCosts(filter CostFilter) (map[string]float64, error) 
 	}
 	return result, nil
 }
+
+type MonthlyCost struct {
+	Month     string
+	TotalCost float64
+	Currency  string
+}
+
+func (db *DB) GetMonthlyCosts(months int) ([]MonthlyCost, error) {
+	query := `
+		SELECT strftime('%Y-%m', date) as month, SUM(cost) as total, currency 
+		FROM cost_records 
+		WHERE date >= date('now', ?)
+		GROUP BY strftime('%Y-%m', date), currency
+		ORDER BY month DESC
+	`
+
+	monthsAgo := fmt.Sprintf("-%d months", months)
+	rows, err := db.conn.Query(query, monthsAgo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []MonthlyCost
+	for rows.Next() {
+		var m MonthlyCost
+		if err := rows.Scan(&m.Month, &m.TotalCost, &m.Currency); err != nil {
+			return nil, err
+		}
+		results = append(results, m)
+	}
+	return results, nil
+}
+
+func (db *DB) GetTotalCost(filter CostFilter) (float64, error) {
+	query := "SELECT COALESCE(SUM(cost), 0) FROM cost_records WHERE 1=1"
+	args := []interface{}{}
+
+	if filter.StartDate != "" {
+		query += " AND date >= ?"
+		args = append(args, filter.StartDate)
+	}
+	if filter.EndDate != "" {
+		query += " AND date <= ?"
+		args = append(args, filter.EndDate)
+	}
+
+	var total float64
+	err := db.conn.QueryRow(query, args...).Scan(&total)
+	return total, err
+}

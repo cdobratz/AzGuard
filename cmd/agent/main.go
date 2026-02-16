@@ -194,6 +194,18 @@ func costCmd() *cobra.Command {
 		},
 	})
 
+	cmd.AddCommand(&cobra.Command{
+		Use:   "trend",
+		Short: "Show cost trend analysis",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			trend, err := costSvc.GetTrendAnalysis()
+			if err != nil {
+				return fmt.Errorf("failed to get trend: %w", err)
+			}
+			return printTrendAnalysis(trend)
+		},
+	})
+
 	return cmd
 }
 
@@ -225,6 +237,42 @@ func printCostSummary(summary *cost.CostSummary) error {
 		if summary.Forecast != nil {
 			fmt.Printf("\n📈 Forecast next month: $%.2f\n", summary.Forecast.NextMonth)
 		}
+
+		if len(summary.MonthlyBreakdown) > 0 {
+			fmt.Println("\nMonthly Breakdown:")
+			for _, m := range summary.MonthlyBreakdown {
+				fmt.Printf("  %s: $%.2f\n", m.Month, m.TotalCost)
+			}
+		}
+	}
+	return nil
+}
+
+func printTrendAnalysis(trend *cost.TrendAnalysis) error {
+	switch outputFormat {
+	case "json":
+		b, err := json.MarshalIndent(trend, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(b))
+	default:
+		fmt.Println("\n📈 Cost Trend Analysis")
+		fmt.Println("─────────────────────────────")
+		fmt.Printf("Current Month:     $%.2f\n", trend.CurrentMonth)
+		fmt.Printf("Previous Month:   $%.2f\n", trend.PreviousMonth)
+		
+		trendIcon := "➡️"
+		if trend.Trend == "increasing" {
+			trendIcon = "📈"
+		} else if trend.Trend == "decreasing" {
+			trendIcon = "📉"
+		}
+		
+		fmt.Printf("Change:           %.2f%% %s\n", trend.ChangePercent, trendIcon)
+		fmt.Printf("Trend:            %s\n", trend.Trend)
+		fmt.Printf("6-Month Average:  $%.2f\n", trend.AverageMonthly)
+		fmt.Printf("Next Month Proj: $%.2f\n", trend.Projection)
 	}
 	return nil
 }
