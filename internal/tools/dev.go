@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/agent/agent/internal/llm"
+	"github.com/azguard/azguard/internal/llm"
 )
 
 type CodeGenerator struct {

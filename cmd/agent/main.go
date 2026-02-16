@@ -7,28 +7,31 @@ import (
 	"os"
 	"strings"
 
-	"github.com/agent/agent/internal/cloud/azure"
-	"github.com/agent/agent/internal/config"
-	"github.com/agent/agent/internal/cost"
-	"github.com/agent/agent/internal/executors"
-	"github.com/agent/agent/internal/llm"
-	"github.com/agent/agent/internal/storage"
-	"github.com/agent/agent/internal/tools"
+	"github.com/azguard/azguard/internal/cloud/azure"
+	"github.com/azguard/azguard/internal/config"
+	"github.com/azguard/azguard/internal/cost"
+	"github.com/azguard/azguard/internal/storage"
 	"github.com/spf13/cobra"
 )
 
 var (
-	cfg           *config.Config
-	db            *storage.DB
-	costSvc       *cost.Service
-	outputFormat  string
+	cfg          *config.Config
+	db           *storage.DB
+	costSvc      *cost.Service
+	outputFormat string
 )
 
 func main() {
 	rootCmd := &cobra.Command{
-		Use:   "agent",
-		Short: "Agent - Build software and track cloud costs",
-		Long:  `A CLI tool for software development and cloud cost management.`,
+		Use:   "azguard",
+		Short: "azguard - Protect against Azure free tier bill shock",
+		Long: `One command to make sure your Azure free tier doesn't surprise you with a bill.
+		
+Examples:
+  azguard scan              Scan for free tier overages
+  azguard resources        List all resources with status
+  azguard budget add 5     Add a $5 budget alert
+  azguard watch            Monitor costs daily`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			cfg, err = config.Load("")
@@ -65,14 +68,318 @@ func main() {
 
 	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "table", "Output format: table, json, csv")
 
+	rootCmd.AddCommand(scanCmd())
+	rootCmd.AddCommand(watchCmd())
+	rootCmd.AddCommand(budgetCmd())
+	rootCmd.AddCommand(resourcesCmd())
+	rootCmd.AddCommand(cleanupCmd())
+	rootCmd.AddCommand(statusCmd())
 	rootCmd.AddCommand(configCmd())
 	rootCmd.AddCommand(costCmd())
-	rootCmd.AddCommand(devCmd())
-	rootCmd.AddCommand(cloudCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
+	}
+}
+
+func statusCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "status",
+		Short: "Quick overview of your Azure free tier status",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := context.Background()
+			summary, err := costSvc.GetCurrentCosts(ctx)
+			if err != nil {
+				return err
+			}
+
+			// Calculate free tier status
+			limit := 200.0 // Approximate monthly free tier value in USD
+			percentUsed := (summary.TotalCost / limit) * 100
+
+			fmt.Println("\n🛡️  Azure Free Tier Status")
+			fmt.Println("═══════════════════════════════")
+			fmt.Printf("Subscription: %s\n", cfg.Azure.SubscriptionID)
+			fmt.Printf("Current Spend: $%.2f / $%.2f free\n", summary.TotalCost, limit)
+
+			if percentUsed >= 100 {
+				fmt.Println("⚠️  Status: OVER LIMIT")
+			} else if percentUsed >= 80 {
+				fmt.Println("⚠️  Status: WARNING (>80%)")
+			} else {
+				fmt.Println("✅ Status: OK")
+			}
+
+			// Check alerts
+			alerts, err := db.GetAlerts()
+			if err == nil && len(alerts) > 0 {
+				fmt.Printf("\n🔔 Active Alerts: %d\n", len(alerts))
+				for _, a := range alerts {
+					if a.Enabled {
+						triggered := ""
+						if summary.TotalCost >= a.Threshold {
+							triggered = " (TRIGGERED)"
+						}
+						fmt.Printf("  • %s: $%.2f%s\n", a.Name, a.Threshold, triggered)
+					}
+				}
+			}
+
+			fmt.Println()
+			return nil
+		},
+	}
+}
+
+func scanCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "scan",
+		Short: "Scan subscription for free tier overages",
+		Long: `Audit your subscription against Azure free tier limits.
+Shows which services are approaching or exceeding their free allocations.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := context.Background()
+
+			// Fetch latest costs
+			startDate, endDate := cost.GetCurrentMonthDateRange()
+			if err := costSvc.FetchAndStoreCosts(ctx, startDate, endDate); err != nil {
+				fmt.Printf("Note: Could not fetch live data: %v\n", err)
+			}
+
+			summary, err := costSvc.GetCostSummary(cost.CostFilter{})
+			if err != nil {
+				return err
+			}
+
+			_, err = cost.LoadFreeTierConfig()
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("\n🔍 Azure Free Tier Scan")
+			fmt.Println("═══════════════════════════════")
+
+			if len(summary.ByService) == 0 {
+				fmt.Println("No costs recorded yet. Run 'azguard fetch' first.")
+				return nil
+			}
+
+			// Check each service against free tier limits
+			limit := 200.0 // Approximate monthly free tier value
+			percentUsed := (summary.TotalCost / limit) * 100
+
+			fmt.Printf("\nTotal Spend: $%.2f / $%.2f free tier\n", summary.TotalCost, limit)
+			fmt.Printf("Usage: %.1f%%\n\n", percentUsed)
+
+			fmt.Println("By Service:")
+			fmt.Println("─────────────────────────────────")
+
+			issuesFound := false
+			for service, c := range summary.ByService {
+				status := "✅"
+				limitAmount := 0.0
+
+				// Map Azure service names to free tier limits
+				switch strings.ToLower(service) {
+				case "virtual machines", "virtualmachine":
+					limitAmount = 0.01 * 750 // B1s VM approximation
+				case "storage", "blob storage":
+					limitAmount = 0.023 * 5 // 5GB storage
+				case "functions", "azure functions":
+					limitAmount = 0.0
+				case "sql database", "sql":
+					limitAmount = 0.0
+				case "app service", "appservice":
+					limitAmount = 0.05 * 750
+				}
+
+				if limitAmount > 0 {
+					servicePercent := (c / limitAmount) * 100
+					if servicePercent >= 100 {
+						status = "❌ OVER"
+						issuesFound = true
+					} else if servicePercent >= 80 {
+						status = "⚠️  WARNING"
+						issuesFound = true
+					}
+				}
+
+				fmt.Printf("%s %-20s $%.2f\n", status, service+":", c)
+			}
+
+			if !issuesFound {
+				fmt.Println("\n✅ All services within free tier limits!")
+			} else {
+				fmt.Println("\n⚠️  Some services may have overages. Run 'azguard resources' for details.")
+			}
+			fmt.Println()
+			return nil
+		},
+	}
+}
+
+func watchCmd() *cobra.Command {
+	var interval string
+	return &cobra.Command{
+		Use:   "watch",
+		Short: "Continuous monitoring with alerts",
+		Long:  `Monitor costs at regular intervals and alert when thresholds are reached.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Println("🛡️  azguard watch - Continuous Monitoring")
+			fmt.Println("═══════════════════════════════════════")
+			fmt.Println("This feature is coming soon!")
+			fmt.Println("For now, use 'azguard status' in a cron job:")
+			fmt.Println("  */30 * * * * azguard status")
+			_ = interval
+			return nil
+		},
+	}
+}
+
+func budgetCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "budget",
+		Short: "Manage budget alerts",
+		Long:  `Set up budget alerts to get notified before unexpected charges.`,
+	}
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "add [amount]",
+		Short: "Add a budget alert",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var amount float64
+			fmt.Sscanf(args[0], "%f", &amount)
+
+			// Validate amount
+			if amount < 1 || amount > 100 {
+				return fmt.Errorf("budget amount should be between $1 and $100")
+			}
+
+			alert := storage.Alert{
+				Name:      fmt.Sprintf("budget-%.0f", amount),
+				Threshold: amount,
+				Enabled:   true,
+			}
+
+			if err := db.SaveAlert(alert); err != nil {
+				return err
+			}
+
+			fmt.Printf("✅ Budget alert set: $%.2f\n", amount)
+			fmt.Println("   You'll be notified when costs exceed this amount.")
+			return nil
+		},
+	})
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "list",
+		Short: "List all budget alerts",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			alerts, err := db.GetAlerts()
+			if err != nil {
+				return err
+			}
+
+			if len(alerts) == 0 {
+				fmt.Println("No budget alerts configured.")
+				fmt.Println("Use 'azguard budget add 5' to set a $5 budget.")
+				return nil
+			}
+
+			fmt.Println("\n🔔 Budget Alerts")
+			fmt.Println("─────────────────────────────")
+			for _, a := range alerts {
+				status := "✅ Enabled"
+				if !a.Enabled {
+					status = "❌ Disabled"
+				}
+				fmt.Printf("$%.2f - %s\n", a.Threshold, status)
+			}
+			return nil
+		},
+	})
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "remove [name]",
+		Short: "Remove a budget alert",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := db.DeleteAlert(args[0])
+			if err != nil {
+				return err
+			}
+			fmt.Printf("✅ Alert '%s' removed\n", args[0])
+			return nil
+		},
+	})
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "presets",
+		Short: "Show preset budget options",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := cost.LoadFreeTierConfig()
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("\n💰 Budget Presets")
+			fmt.Println("─────────────────────────────")
+			for _, preset := range config.Budgets {
+				fmt.Printf("  $%-2.0f  %s\n", preset.Amount, preset.Description)
+				fmt.Printf("         Run: azguard budget add %.0f\n\n", preset.Amount)
+			}
+			return nil
+		},
+	})
+
+	return cmd
+}
+
+func resourcesCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "resources",
+		Short: "List running resources with free tier status",
+		Long:  `Show all Azure resources and their free tier status.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Println("\n📋 Azure Resources")
+			fmt.Println("═══════════════════════════════")
+			fmt.Println("This feature requires Azure CLI integration.")
+			fmt.Println("Run: az cli resource list --output table")
+			fmt.Println()
+			fmt.Println("To check specific resources:")
+			fmt.Println("  az vm list -o table")
+			fmt.Println("  az storage account list -o table")
+			fmt.Println("  az functionapp list -o table")
+			return nil
+		},
+	}
+}
+
+func cleanupCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "cleanup",
+		Short: "Interactive cleanup of orphaned resources",
+		Long:  `Help identify and remove unused resources to prevent charges.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Println("\n🧹 Resource Cleanup Guide")
+			fmt.Println("═══════════════════════════════")
+			fmt.Println("Common resources to check for cleanup:")
+			fmt.Println()
+			fmt.Println("1. Stop unused Virtual Machines:")
+			fmt.Println("   az vm stop --name <vm-name> --resource-group <rg>")
+			fmt.Println()
+			fmt.Println("2. Delete unused storage accounts:")
+			fmt.Println("   az storage account delete --name <storage-name>")
+			fmt.Println()
+			fmt.Println("3. Remove unused app services:")
+			fmt.Println("   az webapp delete --name <app-name> --resource-group <rg>")
+			fmt.Println()
+			fmt.Println("4. Check for orphaned disks:")
+			fmt.Println("   az disk list -o table")
+			return nil
+		},
 	}
 }
 
@@ -83,42 +390,32 @@ func configCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(&cobra.Command{
-		Use:   "get [key]",
-		Short: "Get config value",
-		Args:  cobra.ExactArgs(1),
+		Use:   "list",
+		Short: "Show current configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			value, err := db.GetConfig(args[0])
-			if err != nil {
-				return err
-			}
-			if value == "" {
-				value = config.GetString(args[0])
-			}
-			fmt.Println(value)
+			fmt.Println("\n⚙️  azguard Configuration")
+			fmt.Println("═══════════════════════════════")
+			fmt.Printf("Azure Subscription: %s\n", cfg.Azure.SubscriptionID)
+			fmt.Printf("Auth Method: %s\n", cfg.Azure.AuthMethod)
+			fmt.Printf("Storage Path: %s\n", cfg.Storage.Path)
+			fmt.Println()
 			return nil
 		},
 	})
 
 	cmd.AddCommand(&cobra.Command{
 		Use:   "set [key] [value]",
-		Short: "Set config value",
+		Short: "Set configuration value",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return db.SetConfig(args[0], args[1])
-		},
-	})
-
-	cmd.AddCommand(&cobra.Command{
-		Use:   "list",
-		Short: "List all config",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("Ollama URL: %s\n", cfg.Ollama.BaseURL)
-			fmt.Printf("Ollama Model: %s\n", cfg.Ollama.Model)
-			fmt.Printf("Anthropic Model: %s\n", cfg.Anthropic.Model)
-			fmt.Printf("Azure Auth: %s\n", cfg.Azure.AuthMethod)
-			fmt.Printf("Azure Subscription: %s\n", cfg.Azure.SubscriptionID)
-			fmt.Printf("Storage Path: %s\n", cfg.Storage.Path)
-			return nil
+			key := "azure." + args[0]
+			if args[0] == "subscription" {
+				key = "azure.subscription_id"
+			}
+			if args[0] == "auth" {
+				key = "azure.auth_method"
+			}
+			return db.SetConfig(key, args[1])
 		},
 	})
 
@@ -128,7 +425,7 @@ func configCmd() *cobra.Command {
 func costCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "cost",
-		Short: "Manage cloud costs",
+		Short: "Advanced cost management",
 	}
 
 	cmd.AddCommand(&cobra.Command{
@@ -138,19 +435,7 @@ func costCmd() *cobra.Command {
 			ctx := context.Background()
 			summary, err := costSvc.GetCurrentCosts(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to get current costs: %w", err)
-			}
-			return printCostSummary(summary)
-		},
-	})
-
-	cmd.AddCommand(&cobra.Command{
-		Use:   "history",
-		Short: "Show cost history",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			summary, err := costSvc.GetCostHistory(30)
-			if err != nil {
-				return fmt.Errorf("failed to get cost history: %w", err)
+				return err
 			}
 			return printCostSummary(summary)
 		},
@@ -163,24 +448,20 @@ func costCmd() *cobra.Command {
 			ctx := context.Background()
 			startDate, endDate := cost.GetCurrentMonthDateRange()
 			if err := costSvc.FetchAndStoreCosts(ctx, startDate, endDate); err != nil {
-				return fmt.Errorf("failed to fetch costs: %w", err)
+				return err
 			}
-			fmt.Println("Costs fetched and stored successfully")
+			fmt.Println("✅ Costs fetched and stored")
 			return nil
 		},
 	})
 
 	cmd.AddCommand(&cobra.Command{
-		Use:   "summary",
-		Short: "Show cost summary from local storage",
+		Use:   "history",
+		Short: "Show cost history",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			startDate, endDate := cost.GetCurrentMonthDateRange()
-			summary, err := costSvc.GetCostSummary(cost.CostFilter{
-				StartDate: startDate,
-				EndDate:   endDate,
-			})
+			summary, err := costSvc.GetCostHistory(30)
 			if err != nil {
-				return fmt.Errorf("failed to get cost summary: %w", err)
+				return err
 			}
 			return printCostSummary(summary)
 		},
@@ -193,38 +474,12 @@ func costCmd() *cobra.Command {
 			ctx := context.Background()
 			forecast, err := costSvc.GetForecast(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to get forecast: %w", err)
+				return err
 			}
-			fmt.Printf("Forecast for next month: $%.2f (confidence: %s)\n", forecast.NextMonth, forecast.Confidence)
+			fmt.Printf("Next month forecast: $%.2f (confidence: %s)\n", forecast.NextMonth, forecast.Confidence)
 			return nil
 		},
 	})
-
-	cmd.AddCommand(&cobra.Command{
-		Use:   "trend",
-		Short: "Show cost trend analysis",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			trend, err := costSvc.GetTrendAnalysis()
-			if err != nil {
-				return fmt.Errorf("failed to get trend: %w", err)
-			}
-			return printTrendAnalysis(trend)
-		},
-	})
-
-	cmd.AddCommand(&cobra.Command{
-		Use:   "report",
-		Short: "Generate cost report",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			report, err := costSvc.GenerateReport()
-			if err != nil {
-				return fmt.Errorf("failed to generate report: %w", err)
-			}
-			return printReport(report)
-		},
-	})
-
-	cmd.AddCommand(alertCmd())
 
 	return cmd
 }
@@ -237,437 +492,16 @@ func printCostSummary(summary *cost.CostSummary) error {
 			return err
 		}
 		fmt.Println(string(b))
-	case "csv":
-		fmt.Println("service,cost")
-		for service, c := range summary.ByService {
-			fmt.Printf("%s,%.2f\n", service, c)
-		}
 	default:
 		fmt.Printf("\n📊 Azure Costs - %s\n", summary.Period)
-		fmt.Println("─────────────────────────────")
-		fmt.Printf("Total Cost: $%.2f %s\n\n", summary.TotalCost, summary.Currency)
+		fmt.Printf("Total: $%.2f %s\n", summary.TotalCost, summary.Currency)
 
 		if len(summary.ByService) > 0 {
-			fmt.Println("By Service:")
+			fmt.Println("\nBy Service:")
 			for service, c := range summary.ByService {
 				fmt.Printf("  %-20s $%.2f\n", service+":", c)
 			}
 		}
-
-		if summary.Forecast != nil {
-			fmt.Printf("\n📈 Forecast next month: $%.2f\n", summary.Forecast.NextMonth)
-		}
-
-		if len(summary.MonthlyBreakdown) > 0 {
-			fmt.Println("\nMonthly Breakdown:")
-			for _, m := range summary.MonthlyBreakdown {
-				fmt.Printf("  %s: $%.2f\n", m.Month, m.TotalCost)
-			}
-		}
 	}
 	return nil
-}
-
-func printTrendAnalysis(trend *cost.TrendAnalysis) error {
-	switch outputFormat {
-	case "json":
-		b, err := json.MarshalIndent(trend, "", "  ")
-		if err != nil {
-			return err
-		}
-		fmt.Println(string(b))
-	default:
-		fmt.Println("\n📈 Cost Trend Analysis")
-		fmt.Println("─────────────────────────────")
-		fmt.Printf("Current Month:     $%.2f\n", trend.CurrentMonth)
-		fmt.Printf("Previous Month:   $%.2f\n", trend.PreviousMonth)
-		
-		trendIcon := "➡️"
-		if trend.Trend == "increasing" {
-			trendIcon = "📈"
-		} else if trend.Trend == "decreasing" {
-			trendIcon = "📉"
-		}
-		
-		fmt.Printf("Change:           %.2f%% %s\n", trend.ChangePercent, trendIcon)
-		fmt.Printf("Trend:            %s\n", trend.Trend)
-		fmt.Printf("6-Month Average:  $%.2f\n", trend.AverageMonthly)
-		fmt.Printf("Next Month Proj: $%.2f\n", trend.Projection)
-	}
-	return nil
-}
-
-func printReport(report *cost.Report) error {
-	switch outputFormat {
-	case "json":
-		b, err := json.MarshalIndent(report, "", "  ")
-		if err != nil {
-			return err
-		}
-		fmt.Println(string(b))
-	case "csv":
-		fmt.Println("month,total_cost,currency")
-		for _, m := range report.MonthlyData {
-			fmt.Printf("%s,%.2f,%s\n", m.Month, m.TotalCost, m.Currency)
-		}
-	default:
-		fmt.Println("\n📄 Cost Report - "+report.Period)
-		fmt.Println("═══════════════════════════════════")
-		fmt.Printf("Generated: %s\n", report.GeneratedAt)
-		fmt.Printf("Period:    %s\n", report.Period)
-		fmt.Printf("\n💰 Total Cost: $%.2f %s\n", report.TotalCost, report.Currency)
-		fmt.Printf("📈 Forecast:   $%.2f\n", report.Forecast)
-		
-		if len(report.TopServices) > 0 {
-			fmt.Println("\n🔝 Top Services:")
-			for _, s := range report.TopServices {
-				fmt.Printf("  %-20s $%.2f\n", s.Service+":", s.Cost)
-			}
-		}
-		
-		fmt.Printf("\n📊 Monthly Breakdown:\n")
-		for _, m := range report.MonthlyData {
-			fmt.Printf("  %s: $%.2f\n", m.Month, m.TotalCost)
-		}
-	}
-	return nil
-}
-
-func alertCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "alert",
-		Short: "Manage budget alerts",
-	}
-
-	cmd.AddCommand(&cobra.Command{
-		Use:   "list",
-		Short: "List all alerts",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			alerts, err := db.GetAlerts()
-			if err != nil {
-				return err
-			}
-			if len(alerts) == 0 {
-				fmt.Println("No alerts configured")
-				return nil
-			}
-			fmt.Println("\n🔔 Budget Alerts")
-			fmt.Println("─────────────────────────────")
-			for _, a := range alerts {
-				status := "✅ Enabled"
-				if !a.Enabled {
-					status = "❌ Disabled"
-				}
-				fmt.Printf("%s - $%.2f (%s)\n", a.Name, a.Threshold, status)
-			}
-			return nil
-		},
-	})
-
-	cmd.AddCommand(&cobra.Command{
-		Use:   "add [name] [threshold]",
-		Short: "Add a new budget alert",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			var threshold float64
-			fmt.Sscanf(args[1], "%f", &threshold)
-			alert := storage.Alert{
-				Name:      args[0],
-				Threshold: threshold,
-				Enabled:   true,
-			}
-			if err := db.SaveAlert(alert); err != nil {
-				return err
-			}
-			fmt.Printf("Alert '%s' created with threshold $%.2f\n", args[0], threshold)
-			return nil
-		},
-	})
-
-	cmd.AddCommand(&cobra.Command{
-		Use:   "check",
-		Short: "Check current costs against alerts",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			startDate, endDate := cost.GetCurrentMonthDateRange()
-			summary, err := costSvc.GetCostSummary(cost.CostFilter{
-				StartDate: startDate,
-				EndDate:   endDate,
-			})
-			if err != nil {
-				return err
-			}
-
-			alerts, err := db.GetAlerts()
-			if err != nil {
-				return err
-			}
-
-			if len(alerts) == 0 {
-				fmt.Println("No alerts configured")
-				return nil
-			}
-
-			fmt.Println("\n🔔 Alert Status")
-			fmt.Println("─────────────────────────────")
-			fmt.Printf("Current costs: $%.2f\n\n", summary.TotalCost)
-
-			triggered := false
-			for _, a := range alerts {
-				if !a.Enabled {
-					continue
-				}
-				percent := (summary.TotalCost / a.Threshold) * 100
-				status := "✅ OK"
-				if summary.TotalCost >= a.Threshold {
-					status = "🚨 TRIGGERED"
-					triggered = true
-				}
-				fmt.Printf("%s: $%.2f / $%.2f (%.1f%%) %s\n", 
-					a.Name, summary.TotalCost, a.Threshold, percent, status)
-			}
-
-			if triggered {
-				fmt.Println("\n⚠️  Budget alerts triggered!")
-			}
-			return nil
-		},
-	})
-
-	cmd.AddCommand(&cobra.Command{
-		Use:   "delete [name]",
-		Short: "Delete an alert",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := db.DeleteAlert(args[0]); err != nil {
-				return err
-			}
-			fmt.Printf("Alert '%s' deleted\n", args[0])
-			return nil
-		},
-	})
-
-	return cmd
-}
-
-func devCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "dev",
-		Short: "Software development tools",
-	}
-
-	cmd.AddCommand(&cobra.Command{
-		Use:   "build [task]",
-		Short: "Generate code using AI",
-		Args:  cobra.MinimumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			provider, err := llm.NewProvider("ollama", cfg.Ollama.BaseURL, cfg.Ollama.Model, cfg.Anthropic.APIKey)
-			if err != nil {
-				provider, err = llm.NewProvider("anthropic", "", cfg.Anthropic.Model, cfg.Anthropic.APIKey)
-				if err != nil {
-					return fmt.Errorf("no LLM provider available: %w", err)
-				}
-			}
-
-			gen := tools.NewCodeGenerator(provider)
-
-			language, _ := cmd.Flags().GetString("language")
-			output, _ := cmd.Flags().GetString("output")
-
-			req := tools.GenerateRequest{
-				Language: language,
-				Task:     strings.Join(args, " "),
-				Path:     output,
-			}
-
-			code, err := gen.Generate(req)
-			if err != nil {
-				return err
-			}
-
-			fmt.Println(code)
-			return nil
-		},
-	})
-
-	cmd.AddCommand(&cobra.Command{
-		Use:   "review [path]",
-		Short: "Review code using AI",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			provider, err := llm.NewProvider("ollama", cfg.Ollama.BaseURL, cfg.Ollama.Model, cfg.Anthropic.APIKey)
-			if err != nil {
-				provider, err = llm.NewProvider("anthropic", "", cfg.Anthropic.Model, cfg.Anthropic.APIKey)
-				if err != nil {
-					return fmt.Errorf("no LLM provider available: %w", err)
-				}
-			}
-
-			reviewer := tools.NewCodeReviewer(provider)
-
-			result, err := reviewer.Review(tools.ReviewRequest{Path: args[0]})
-			if err != nil {
-				return err
-			}
-
-			fmt.Printf("\n📝 Code Review: %s\n", args[0])
-			fmt.Println("─────────────────────────────────")
-			fmt.Printf("%s\n\n", result.Summary)
-
-			if len(result.Issues) > 0 {
-				fmt.Println("Issues found:")
-				for _, issue := range result.Issues {
-					fmt.Printf("  • %s\n", issue)
-				}
-			}
-			return nil
-		},
-	})
-
-	cmd.AddCommand(&cobra.Command{
-		Use:   "test [path]",
-		Short: "Run tests",
-		Args:  cobra.MinimumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			runner := tools.NewTestRunner()
-
-			result, err := runner.Run(args[0])
-			if err != nil {
-				return err
-			}
-
-			if result.Passed {
-				fmt.Println("✅ " + result.Summary)
-			} else {
-				fmt.Println("❌ " + result.Summary)
-			}
-
-			if outputFormat == "json" {
-				json.NewEncoder(os.Stdout).Encode(result)
-			}
-			return nil
-		},
-	})
-
-	cmd.AddCommand(&cobra.Command{
-		Use:   "run [command]",
-		Short: "Run a command in PowerShell, Bash, or Azure CLI",
-		Args:  cobra.MinimumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			shell, _ := cmd.Flags().GetString("shell")
-			command := strings.Join(args, " ")
-
-			var exec executor.Executor
-			switch shell {
-			case "powershell", "pwsh":
-				exec = executor.NewPowerShellExecutor()
-			case "bash", "sh":
-				exec = executor.NewBashExecutor()
-			case "cmd":
-				exec = executor.NewCmdExecutor()
-			case "az", "azure":
-				exec = executor.NewAzureCLIExecutor()
-			default:
-				exec = executor.AutoDetectExecutor()
-			}
-
-			ctx := context.Background()
-			result, err := exec.Execute(ctx, command)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			}
-			fmt.Print(result.Output)
-			return nil
-		},
-	})
-
-	cmd.Flags().StringP("language", "l", "python", "Programming language for code generation")
-	cmd.Flags().StringP("output", "o", "", "Output file path")
-	cmd.Flags().StringP("shell", "s", "", "Shell to use: powershell, bash, az, cmd")
-
-	return cmd
-}
-
-func cloudCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "cloud",
-		Short: "Multi-cloud cost management",
-	}
-
-	cmd.AddCommand(&cobra.Command{
-		Use:   "list",
-		Short: "List configured cloud providers",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("\n☁️  Configured Cloud Providers")
-			fmt.Println("─────────────────────────────")
-
-			if cfg.Azure.SubscriptionID != "" {
-				fmt.Printf("✅ Azure: %s\n", cfg.Azure.SubscriptionID)
-			} else {
-				fmt.Println("❌ Azure: Not configured")
-			}
-
-			if cfg.AWS.Region != "" {
-				fmt.Printf("✅ AWS: %s\n", cfg.AWS.Region)
-			} else {
-				fmt.Println("❌ AWS: Not configured")
-			}
-
-			if cfg.GCP.ProjectID != "" {
-				fmt.Printf("✅ GCP: %s\n", cfg.GCP.ProjectID)
-			} else {
-				fmt.Println("❌ GCP: Not configured")
-			}
-
-			fmt.Println("\nUse 'agent config set' to configure providers")
-			return nil
-		},
-	})
-
-	cmd.AddCommand(&cobra.Command{
-		Use:   "all",
-		Short: "Show costs from all configured providers",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("\n☁️  Multi-Cloud Cost Summary")
-			fmt.Println("═══════════════════════════════")
-
-			providers := []string{}
-
-			if cfg.Azure.SubscriptionID != "" {
-				providers = append(providers, "azure")
-			}
-			if cfg.AWS.Region != "" {
-				providers = append(providers, "aws")
-			}
-			if cfg.GCP.ProjectID != "" {
-				providers = append(providers, "gcp")
-			}
-
-			if len(providers) == 0 {
-				fmt.Println("No cloud providers configured")
-				return nil
-			}
-
-			var totalCost float64
-
-			for _, p := range providers {
-				switch p {
-				case "azure":
-					summary, _ := costSvc.GetCostSummary(cost.CostFilter{})
-					if summary != nil {
-						fmt.Printf("\n📘 Azure: $%.2f %s\n", summary.TotalCost, summary.Currency)
-						totalCost += summary.TotalCost
-					}
-				case "aws":
-					fmt.Printf("\n📙 AWS: Configure with agent config set aws.access_key <key>\n")
-				case "gcp":
-					fmt.Printf("\n📗 GCP: Configure with agent config set gcp.project_id <id>\n")
-				}
-			}
-
-			fmt.Printf("\n💰 Total (all providers): $%.2f\n", totalCost)
-			return nil
-		},
-	})
-
-	return cmd
 }

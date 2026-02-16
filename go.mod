@@ -1,4 +1,4 @@
-module github.com/agent/agent
+module github.com/azguard/azguard
 
 go 1.21
 

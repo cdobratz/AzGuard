@@ -1,12 +1,48 @@
-# Usage Guide
+# azguard Usage Guide
 
 ## Table of Contents
 
-1. [Configuration](#configuration)
-2. [Cost Management](#cost-management)
-3. [Cloud Providers](#cloud-providers)
-4. [Development Tools](#development-tools)
-5. [API Server](#api-server)
+1. [Installation](#installation)
+2. [Configuration](#configuration)
+3. [Commands](#commands)
+4. [Examples](#examples)
+
+---
+
+## Installation
+
+### One-Liner (Recommended)
+
+```bash
+curl -sSL https://azguard.dev/install.sh | bash
+```
+
+### Manual Install
+
+```bash
+# Download latest release
+curl -L -o azguard https://github.com/azguard/azguard/releases/latest/download/azguard
+
+# Make executable
+chmod +x azguard
+
+# Add to PATH
+sudo mv azguard /usr/local/bin/
+```
+
+### Package Managers
+
+```powershell
+# Scoop (Windows)
+scoop bucket add extras
+scoop install azguard
+
+# Homebrew (macOS/Linux)
+brew install azguard
+
+# Chocolatey (Windows)
+choco install azguard
+```
 
 ---
 
@@ -14,364 +50,169 @@
 
 ### Initial Setup
 
-1. Copy the default config:
-   ```bash
-   mkdir -p ~/.agent
-   cp configs/config.yaml ~/.agent/config.yaml
-   ```
+```bash
+# Create config directory
+mkdir -p ~/.azguard
 
-2. Edit `~/.agent/config.yaml` with your settings
+# Set your Azure subscription
+azguard config set subscription YOUR_SUBSCRIPTION_ID
+```
 
-### Azure Configuration
+### Authentication
+
+azguard uses your existing Azure CLI credentials:
+
+```bash
+# Login to Azure
+az login
+```
+
+That's it! azguard will use your Azure credentials automatically.
+
+### Config File
+
+Location: `~/.azguard/config.yaml`
 
 ```yaml
 azure:
-  auth_method: cli              # cli, service_principal, managed_identity
-  subscription_id: YOUR_SUB_ID  # Your Azure subscription ID
-  tenant_id: YOUR_TENANT_ID     # For service principal
-  client_id: YOUR_CLIENT_ID    # For service principal
-  client_secret: YOUR_SECRET   # For service principal
-```
+  auth_method: cli
+  subscription_id: YOUR_SUB_ID
+  tenant_id:        # Optional (for service principal)
+  client_id:        # Optional (for service principal)
+  client_secret:    # Optional (for service principal)
 
-**Authentication Methods:**
-
-| Method | Description |
-|--------|-------------|
-| `cli` | Use `az login` (default, easiest) |
-| `service_principal` | Use app registration |
-| `managed_identity` | Use Azure VM/Container identity |
-
-### AWS Configuration
-
-```yaml
-aws:
-  access_key: YOUR_ACCESS_KEY
-  secret_key: YOUR_SECRET_KEY
-  session_token: YOUR_SESSION_TOKEN  # Optional, for temp credentials
-  region: us-east-1
-```
-
-Or via environment variables:
-```bash
-export AWS_ACCESS_KEY_ID=...
-export AWS_SECRET_ACCESS_KEY=...
-```
-
-### GCP Configuration
-
-```yaml
-gcp:
-  project_id: YOUR_PROJECT_ID
-```
-
-Or via environment variables:
-```bash
-export GCP_PROJECT_ID=...
-```
-
-### LLM Providers
-
-```yaml
-ollama:
-  base_url: http://localhost:11434
-  model: codellama
-
-anthropic:
-  api_key: YOUR_API_KEY
-  model: claude-3-sonnet-20240229
-```
-
-### Config Commands
-
-```bash
-# List all config
-agent config list
-
-# Get specific value
-agent config get azure.subscription_id
-agent config get aws.region
-
-# Set value
-agent config set azure.subscription_id 90f4b6d4-2401-43c1-9c92-14abdfdb2e01
-agent config set aws.region us-east-1
+storage:
+  path: ~/.azguard/data.db
 ```
 
 ---
 
-## Cost Management
+## Commands
 
-### Fetching Costs
-
-```bash
-# Fetch current month costs from Azure
-agent cost current
-
-# Fetch and store costs locally
-agent cost fetch
-```
-
-### Viewing Costs
+### Quick Status
 
 ```bash
-# Current month summary
-agent cost current
-
-# From local database
-agent cost summary
-
-# Historical data (default: last 30 days)
-agent cost history
-agent cost history --days 90
+azguard status
 ```
 
-### Analysis
+Shows:
+- Current spend vs free tier limit
+- Active budget alerts
+- Status (OK / Warning / Over)
+
+### Scan for Overages
 
 ```bash
-# Trend analysis (month-over-month)
-agent cost trend
-
-# Cost forecast
-agent cost forecast
+azguard scan
 ```
 
-### Reports
-
-```bash
-# Generate report (default: last 12 months)
-agent cost report
-
-# Output formats
-agent cost report -o json
-agent cost report -o csv
-```
+Audits your subscription against Azure free tier limits and shows:
+- Total spend vs free tier
+- Per-service breakdown
+- Warning/overage indicators
 
 ### Budget Alerts
 
 ```bash
-# Create alert
-agent cost alert add monthly-budget 100
+# Add a budget alert
+azguard budget add 5      # $5 budget
+azguard budget add 10     # $10 budget
 
-# List alerts
-agent cost alert list
+# List all alerts
+azguard budget list
 
-# Check alerts against current costs
-agent cost alert check
+# Show preset options
+azguard budget presets
 
-# Delete alert
-agent cost alert delete monthly-budget
+# Remove an alert
+azguard budget remove budget-5
 ```
 
-### Output Formats
+### Cost Commands
 
 ```bash
-# Table (default)
-agent cost current
+# Fetch latest costs from Azure
+azguard cost fetch
 
-# JSON (for scripting)
-agent cost current -o json
+# Current month costs
+azguard cost current
 
-# CSV (for spreadsheets)
-agent cost current -o csv
+# Historical costs
+azguard cost history
+azguard cost history --days 90
+
+# Cost forecast
+azguard cost forecast
 ```
 
----
-
-## Cloud Providers
-
-### List Configured Providers
+### Resources
 
 ```bash
-agent cloud list
+# Check running resources
+azguard resources
+
+# Cleanup guide
+azguard cleanup
 ```
 
-Output:
-```
-☁️  Configured Cloud Providers
-─────────────────────────────
-✅ Azure: 90f4b6d4-2401-43c1-9c92-14abdfdb2e01
-✅ AWS: us-east-1
-❌ GCP: Not configured
-```
-
-### All Providers Summary
+### Configuration
 
 ```bash
-agent cloud all
-```
+# List config
+azguard config list
 
----
-
-## Development Tools
-
-### Code Generation
-
-```bash
-# Generate code (default: Python)
-agent dev build "create a hello world function"
-
-# Specify language
-agent dev build "REST API endpoint" -l go
-agent dev build "hello world" -l javascript
-agent dev build "data class" -l java
-
-# Save to file
-agent dev build "create user model" -l python -o models.py
-
-# Available languages: python, go, javascript, typescript, java, rust, csharp
-```
-
-### Code Review
-
-```bash
-# Review a file
-agent dev review path/to/file.py
-
-# With JSON output
-agent dev review path/to/file.py -o json
-```
-
-### Test Execution
-
-```bash
-# Run tests
-agent dev test path/to/test.py
-
-# Works with:
-# - Python: pytest
-# - JavaScript: npm test / jest
-# - Go: go test
-# - Rust: cargo test
-# - Java: mvn test
-```
-
-### Shell Execution
-
-```bash
-# PowerShell
-agent dev run "Get-Process | Select-Object -First 5" -s powershell
-
-# Bash
-agent dev run "ls -la" -s bash
-
-# Azure CLI
-agent dev run "vm list --output table" -s az
-
-# CMD
-agent dev run "dir" -s cmd
-
-# Auto-detect shell
-agent dev run "ls -la"
-```
-
----
-
-## API Server
-
-### Starting the Server
-
-```bash
-# Default port (8080)
-agent-api
-
-# Custom port
-agent-api -port 3000
-```
-
-### Endpoints
-
-#### Health Check
-
-```bash
-curl http://localhost:8080/health
-```
-
-Response:
-```json
-{
-  "status": "ok",
-  "timestamp": "2026-02-16T00:02:01-07:00"
-}
-```
-
-#### Cost Endpoints
-
-```bash
-# Current costs
-curl http://localhost:8080/api/v1/cost/azure/current
-
-# Cost summary
-curl "http://localhost:8080/api/v1/cost/azure/summary?start_date=2026-01-01&end_date=2026-02-01"
-
-# History
-curl "http://localhost:8080/api/v1/cost/azure/history?days=30"
-
-# Forecast
-curl http://localhost:8080/api/v1/cost/azure/forecast
-
-# Trend
-curl http://localhost:8080/api/v1/cost/azure/trend
-
-# All providers
-curl http://localhost:8080/api/v1/cost/all
-
-# Report
-curl http://localhost:8080/api/v1/cost/report
-```
-
-#### Alert Endpoints
-
-```bash
-# List alerts
-curl http://localhost:8080/api/v1/alerts
-
-# Create alert
-curl -X POST http://localhost:8080/api/v1/alerts \
-  -H "Content-Type: application/json" \
-  -d '{"name": "monthly-budget", "threshold": 100}'
-
-# Check alerts
-curl http://localhost:8080/api/v1/alerts/check
-
-# Delete alert
-curl -X DELETE "http://localhost:8080/api/v1/alerts?name=monthly-budget"
-```
-
-#### Config
-
-```bash
-curl http://localhost:8080/api/v1/config
+# Set config
+azguard config set subscription YOUR_SUB_ID
 ```
 
 ---
 
 ## Examples
 
-### Daily Cost Check
+### Daily Check
 
 ```bash
 #!/bin/bash
-# Daily cost check script
+# Daily Azure bill check
 
-echo "=== Azure Costs ==="
-agent cost current
-
-echo ""
-echo "=== Alerts ==="
-agent cost alert check
+echo "=== Azure Free Tier Status ==="
+azguard status
 ```
 
-### Cost Report Automation
+### Cron Job for Monitoring
 
 ```bash
-# Generate weekly report
-agent cost report -o json > weekly-report-$(date +%Y-%m-%d).json
+# Run every day at 8am
+0 8 * * * /usr/local/bin/azguard status
 ```
 
-### Multi-Cloud Dashboard
+### CI/CD Integration
 
 ```bash
-# Get all cloud costs
-agent cloud all
+# In your CI pipeline
+azguard status
+if [ $? -eq 0 ]; then
+  echo "All good!"
+else
+  echo "Warning: Check azguard status"
+fi
+```
+
+---
+
+## Output Formats
+
+All commands support multiple output formats:
+
+```bash
+# Table (default)
+azguard status
+
+# JSON (for scripting)
+azguard status -o json
+
+# JSON with jq
+azguard status -o json | jq '.total_spend'
 ```
 
 ---
@@ -382,14 +223,16 @@ agent cloud all
 
 | Issue | Solution |
 |-------|----------|
-| Azure costs show $0.00 | Wait 24-48 hours for billing data, or check subscription permissions |
-| `az login` not working | Run `az login` separately first |
-| Ollama not connecting | Ensure Ollama is running (`ollama serve`) |
-| API server won't start | Check port is not in use |
+| No subscription found | Run `az login` first |
+| Costs show $0.00 | Wait 24-48 hours for billing data |
+| Permission denied | Ensure you have Cost Management Reader role |
 
-### Debug Mode
+### Get Help
 
 ```bash
-# Enable verbose output (if supported)
-agent --verbose cost current
+# Show help
+azguard --help
+
+# Show help for specific command
+azguard scan --help
 ```

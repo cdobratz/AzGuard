@@ -12,12 +12,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/agent/agent/internal/cloud/aws"
-	"github.com/agent/agent/internal/cloud/azure"
-	"github.com/agent/agent/internal/cloud/gcp"
-	"github.com/agent/agent/internal/config"
-	"github.com/agent/agent/internal/cost"
-	"github.com/agent/agent/internal/storage"
+	"github.com/azguard/azguard/internal/cloud/aws"
+	"github.com/azguard/azguard/internal/cloud/azure"
+	"github.com/azguard/azguard/internal/cloud/gcp"
+	"github.com/azguard/azguard/internal/config"
+	"github.com/azguard/azguard/internal/cost"
+	"github.com/azguard/azguard/internal/storage"
 )
 
 type APIServer struct {

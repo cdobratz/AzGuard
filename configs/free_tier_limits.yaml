@@ -1,0 +1,110 @@
+# Azure Free Tier Limits
+# These are the limits for Azure's free account tier
+# Used by azguard to detect potential overages
+
+services:
+  # Virtual Machines
+  virtual_machines:
+    description: "B1s VM hours"
+    limit: 750
+    unit: "hours"
+    duration: "12 months"
+    warning_threshold: 0.8  # Warn at 80%
+
+  # Storage
+  blob_storage:
+    description: "Hot Blob Storage"
+    limit: 5
+    unit: "GB"
+    duration: "always free"
+    operations:
+      read: 20000
+      write: 10000
+
+  # Functions
+  functions:
+    description: "Azure Functions executions"
+    limit: 1000000
+    unit: "executions"
+    duration: "always free"
+    warning_threshold: 0.8
+
+  # SQL Database
+  sql_database:
+    description: "Azure SQL Database"
+    limit: 32
+    unit: "MB"
+    duration: "12 months"
+
+  # App Service
+  app_service:
+    description: "App Service hours"
+    limit: 750
+    unit: "hours"
+    duration: "12 months"
+    warning_threshold: 0.8
+
+  # Cosmos DB
+  cosmos_db:
+    description: "Cosmos DB RU/s"
+    limit: 1000
+    unit: "RU/s"
+    duration: "always free"
+    storage_gb: 25
+
+  # Cognitive Services
+  cognitive_services:
+    description: "Text Analytics (F0)"
+    calls: 5000
+    unit: "calls/month"
+    duration: "12 months"
+
+  # Logic Apps
+  logic_apps:
+    description: "Logic Apps executions"
+    limit: 750000
+    unit: "executions"
+    duration: "12 months"
+
+  # Event Hubs
+  event_hubs:
+    description: "Event Hubs"
+    limit: 1
+    unit: "million events/month"
+    duration: "12 months"
+
+  # Service Bus
+  service_bus:
+    description: "Service Bus messages"
+    limit: 25000
+    unit: "messages/month"
+    duration: "12 months"
+
+  # Notification Hubs
+  notification_hubs:
+    description: "Push notifications"
+    limit: 1000000
+    unit: "pushes"
+    duration: "12 months"
+
+  # Key Vault
+  key_vault:
+    description: "Key Vault operations"
+    limit: 10000
+    unit: "operations/month"
+    duration: "always free"
+
+# Budget presets (in USD)
+budgets:
+  tiny:
+    amount: 1
+    description: "Strict budget - great for free tier testing"
+  small:
+    amount: 5
+    description: "Small budget for light usage"
+  medium:
+    amount: 10
+    description: "Medium budget for moderate usage"
+  moderate:
+    amount: 20
+    description: "Higher budget with warning before limit"

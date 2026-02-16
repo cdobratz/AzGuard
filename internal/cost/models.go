@@ -3,7 +3,7 @@ package cost
 import (
 	"time"
 
-	"github.com/agent/agent/internal/storage"
+	"github.com/azguard/azguard/internal/storage"
 )
 
 type CostSummary struct {

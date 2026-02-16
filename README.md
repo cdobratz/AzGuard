@@ -1,43 +1,82 @@
-# Agent CLI
+# azguard
 
-A cross-platform CLI tool for software development and multi-cloud cost management, designed for Microsoft environments (PowerShell, Bash, Azure CLI).
+**One command to make sure your Azure free tier doesn't surprise you with a bill.**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8.svg)
 
+## The Problem
+
+Azure's free tier has 65+ services with different expiration rules, usage caps, and hidden dependencies. A "free" VM triggers billable disks, IPs, and monitoring logs. Thousands of students, freelancers, and small teams get surprised by unexpected charges every month.
+
+## The Solution
+
+azguard monitors your Azure usage against free tier limits and alerts you before you accidentally accumulate charges.
+
 ## Features
 
-### Cloud Cost Management
-- **Multi-cloud support**: Azure, AWS, GCP
-- **Cost tracking**: Current costs, historical trends, forecasting
-- **Budget alerts**: Set thresholds and get notified
-- **Reports**: Generate JSON/CSV reports
+- **Free Tier Scanner** - Scan your subscription for potential overages
+- **Budget Alerts** - Set custom alerts ($1-$100) to prevent bill shock
+- **Cost Tracking** - Monitor current spend against free tier limits
+- **Resource Cleanup** - Interactive guide to identify unused resources
+- **Historical Trends** - Track spending over time
 
-### Software Development
-- **Code generation**: AI-powered code generation using Ollama or Anthropic Claude
-- **Code review**: AI-powered code analysis
-- **Test execution**: Run tests for multiple languages
-- **Shell integration**: Execute PowerShell, Bash, Azure CLI commands
+## Quick Start
 
-### API Server
-- **REST API**: HTTP endpoints for all CLI commands
-- **Multi-cloud**: Unified API for Azure, AWS, GCP costs
+```bash
+# One-line install (recommended)
+curl -sSL https://azguard.dev/install.sh | bash
+
+# Or download from releases
+curl -L -o azguard https://github.com/azguard/azguard/releases/latest/download/azguard
+chmod +x azguard
+```
+
+### Configure
+
+```bash
+# Set your Azure subscription
+azguard config set subscription YOUR_SUBSCRIPTION_ID
+
+# Or use Azure CLI auth (default)
+az login
+```
+
+### Basic Usage
+
+```bash
+# Quick status check
+azguard status
+
+# Scan for free tier overages
+azguard scan
+
+# Add a budget alert
+azguard budget add 5
+
+# Fetch latest costs
+azguard cost fetch
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `azguard status` | Quick overview of your free tier status |
+| `azguard scan` | Scan for free tier overages |
+| `azguard resources` | List resources with status indicators |
+| `azguard budget add [amount]` | Add a budget alert ($1-$100) |
+| `azguard budget list` | List all budget alerts |
+| `azguard cost current` | Show current month costs |
+| `azguard cost history` | Show cost history |
+| `azguard cleanup` | Interactive cleanup guide |
 
 ## Installation
 
-### Pre-built Binaries
-
-Download the latest release from [GitHub Releases](https://github.com/yourusername/agent/releases):
+### One-Liner (Recommended)
 
 ```bash
-# Windows
-curl -L -o agent.exe https://github.com/yourusername/agent/releases/latest/download/agent-windows-amd64.exe
-
-# Linux
-curl -L -o agent https://github.com/yourusername/agent/releases/latest/download/agent-linux-amd64
-
-# macOS
-curl -L -o agent https://github.com/yourusername/agent/releases/latest/download/Agent-darwin-amd64
+curl -sSL https://azguard.dev/install.sh | bash
 ```
 
 ### Package Managers
@@ -45,248 +84,85 @@ curl -L -o agent https://github.com/yourusername/agent/releases/latest/download/
 ```powershell
 # Scoop (Windows)
 scoop bucket add extras
-scoop install agent
-
-# Chocolatey (Windows)
-choco install agent
+scoop install azguard
 
 # Homebrew (macOS/Linux)
-brew install agent
+brew install azguard
+
+# Chocolatey (Windows)
+choco install azguard
 ```
 
 ### Build from Source
 
 ```bash
-git clone https://github.com/yourusername/agent.git
-cd agent
-go build -o agent ./cmd/agent
-go build -o agent-api ./cmd/api
-```
-
-## Quick Start
-
-### 1. Configure Azure
-
-```bash
-# Set subscription ID
-agent config set azure.subscription_id YOUR_SUBSCRIPTION_ID
-
-# Or use Azure CLI auth (default)
-az login
-```
-
-### 2. Check Cloud Costs
-
-```bash
-# Current month costs
-agent cost current
-
-# Cost history
-agent cost history
-
-# Trend analysis
-agent cost trend
-```
-
-### 3. Set Budget Alerts
-
-```bash
-# Create alert
-agent cost alert add monthly-budget 100
-
-# Check alerts
-agent cost alert check
-```
-
-### 4. Generate Code
-
-```bash
-# Generate Python code
-agent dev build "create a hello world function" -l python
-
-# Generate with output file
-agent dev build "REST API endpoint" -l go -o api.go
-```
-
-### 5. Run Commands
-
-```bash
-# PowerShell
-agent dev run "Get-Process" -s powershell
-
-# Azure CLI
-agent dev run "vm list" -s az
-
-# Auto-detect shell
-agent dev run "ls -la"
+git clone https://github.com/azguard/azguard.git
+cd azguard
+go build -o azguard ./cmd/agent
 ```
 
 ## Configuration
 
-Config file location: `~/.agent/config.yaml`
+Config file: `~/.azguard/config.yaml`
 
 ```yaml
-ollama:
-  base_url: http://localhost:11434
-  model: codellama
-
-anthropic:
-  api_key: ""
-  model: claude-3-sonnet-20240229
-
 azure:
-  auth_method: cli
-  subscription_id: ""
-
-aws:
-  access_key: ""
-  secret_key: ""
-  region: us-east-1
-
-gcp:
-  project_id: ""
+  auth_method: cli  # or service_principal
+  subscription_id: YOUR_SUB_ID
 
 storage:
-  path: ~/.agent/data.db
+  path: ~/.azguard/data.db
 ```
 
-### Environment Variables
+## How It Works
 
-| Variable | Description |
-|----------|-------------|
-| `ANTHROPIC_API_KEY` | Anthropic API key |
-| `AWS_ACCESS_KEY_ID` | AWS access key |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key |
-| `AWS_SESSION_TOKEN` | AWS session token |
-| `GCP_PROJECT_ID` | GCP project ID |
+1. **Authentication** - Uses your existing Azure CLI credentials (`az login`)
+2. **Cost Query** - Queries Azure Cost Management API (always free)
+3. **Limit Check** - Compares usage against known free tier limits
+4. **Alert** - Notifies you when approaching or exceeding limits
 
-## Commands
-
-### Cost Management
-
-| Command | Description |
-|---------|-------------|
-| `agent cost current` | Current month costs |
-| `agent cost fetch` | Fetch costs from cloud |
-| `agent cost summary` | Cost summary |
-| `agent cost history` | Historical trends |
-| `agent cost forecast` | Cost prediction |
-| `agent cost trend` | Trend analysis |
-| `agent cost report` | Generate report |
-| `agent cost alert add [name] [threshold]` | Create alert |
-| `agent cost alert list` | List alerts |
-| `agent cost alert check` | Check alerts |
-| `agent cost alert delete [name]` | Delete alert |
-
-### Cloud Providers
-
-| Command | Description |
-|---------|-------------|
-| `agent cloud list` | List configured providers |
-| `agent cloud all` | All providers cost summary |
-
-### Development Tools
-
-| Command | Description |
-|---------|-------------|
-| `agent dev build [task]` | Generate code |
-| `agent dev build [task] -l [language]` | Generate code in specific language |
-| `agent dev build [task] -o [file]` | Generate code to file |
-| `agent dev review [path]` | Review code |
-| `agent dev test [path]` | Run tests |
-| `agent dev run [command]` | Execute shell commands |
-| `agent dev run [command] -s [shell]` | Execute in specific shell |
-
-### Configuration
-
-| Command | Description |
-|---------|-------------|
-| `agent config list` | List config |
-| `agent config get [key]` | Get value |
-| `agent config set [key] [value]` | Set value |
-
-## API Server
-
-Start the REST API server:
+## Budget Presets
 
 ```bash
-agent-api -port 8080
+$1   Strict budget - great for free tier testing
+$5   Small budget - light usage
+$10  Medium budget - moderate usage
+$20  Higher budget - warning before limit
 ```
 
-### Endpoints
+## Use Cases
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/api/v1/cost/azure/current` | Current costs |
-| GET | `/api/v1/cost/azure/summary` | Cost summary |
-| GET | `/api/v1/cost/azure/history` | Historical costs |
-| GET | `/api/v1/cost/azure/forecast` | Cost forecast |
-| GET | `/api/v1/cost/azure/trend` | Trend analysis |
-| GET | `/api/v1/cost/all` | All providers |
-| GET | `/api/v1/cost/report` | Generate report |
-| GET | `/api/v1/alerts` | List alerts |
-| POST | `/api/v1/alerts` | Create alert |
-| DELETE | `/api/v1/alerts?name=x` | Delete alert |
-| GET | `/api/v1/alerts/check` | Check alerts |
-| GET | `/api/v1/config` | Get config |
+- **Students** - Learning Azure without accumulating charges
+- **Freelancers** - Client projects on limited budgets
+- **Bootcamp Grads** - First cloud experience
+- **Small Teams** - Quick cost visibility without enterprise tools
 
-### Example
+## Why azguard?
 
-```bash
-# Start server
-agent-api -port 8080 &
+| Tool | Focus | Price |
+|------|-------|-------|
+| Azure Portal | Enterprise billing | Free but complex |
+| Infracost | Terraform costs | Free + Paid |
+| CloudZero | Enterprise FinOps | $30K+/year |
+| **azguard** | Free tier protection | **Free, open source** |
 
-# Get current costs
-curl http://localhost:8080/api/v1/cost/azure/current
+## Roadmap
 
-# Get config
-curl http://localhost:8080/api/v1/config
-```
+- [ ] Daily/weekly monitoring with notifications
+- [ ] AWS free tier guard
+- [ ] GCP free tier guard
+- [ ] Slack/Teams notifications
+- [ ] Web dashboard
 
-## Output Formats
+## Contributing
 
-All commands support multiple output formats:
-
-```bash
-# Table (default)
-agent cost current
-
-# JSON
-agent cost current -o json
-
-# CSV
-agent cost current -o csv
-```
-
-## Development
-
-### Requirements
-
-- Go 1.21+
-- Azure CLI (for Azure auth)
-- Ollama (optional, for local AI models)
-
-### Build
-
-```bash
-# Build CLI
-go build -o agent ./cmd/agent
-
-# Build API server
-go build -o agent-api ./cmd/api
-```
-
-### Test
-
-```bash
-go test ./...
-```
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License - see [LICENSE](LICENSE).
 
 ## Support
 
-- Report bugs: [GitHub Issues](https://github.com/yourusername/agent/issues)
+- [GitHub Issues](https://github.com/azguard/azguard/issues)
+- [GitHub Discussions](https://github.com/azguard/azguard/discussions)
