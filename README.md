@@ -26,10 +26,34 @@ A cross-platform CLI for Windows (PowerShell, Bash, Azure CLI) that builds softw
 
 ---
 
+## Software Development
+```txt
+agent build "feature description"
+agent review [--path ./src]
+agent test [--framework pytest]
+agent run "powershell_cmd"
+```
+## Cloud Cost Tracking
+```txt
+# Phase 1 - More added
+
+agent cost current                     # Current month costs
+agent cost history                     # Historical trends
+agent cost forecast                    # Cost prediction
+agent cost report [--period month]     # Generate report
+agent cost alert set --threshold 1000  # Set budget alert
+agent cost alert list                  # View alerts
+```
+## Configuration
+```txt
+agent config set azure-auth cli        # Azure auth method
+agent cost configure --subscription-id # Configure subscriptions
+```
+
 ## All CLI Commands
 
 ### Global Flags
-```
+```txt
 -o, --output string   Output format: table, json, csv (default "table")
 ```
 
