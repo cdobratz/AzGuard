@@ -1,167 +1,292 @@
-# MissionAgents 
+# Agent CLI
 
-## :office: Business Agent System with Cloud Cost Tracking 
+A cross-platform CLI tool for software development and multi-cloud cost management, designed for Microsoft environments (PowerShell, Bash, Azure CLI).
 
-#### Project Overview
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8.svg)
 
-A cross-platform CLI for Windows (PowerShell, Bash, Azure CLI) that builds software AND tracks cloud costs. Powered by Ollama (local) and Anthropic Claude API. Distributed as standalone binaries.
+## Features
 
-### Capabilities
+### Cloud Cost Management
+- **Multi-cloud support**: Azure, AWS, GCP
+- **Cost tracking**: Current costs, historical trends, forecasting
+- **Budget alerts**: Set thresholds and get notified
+- **Reports**: Generate JSON/CSV reports
 
-1. Software Development (from before) :computer:
+### Software Development
+- **Code generation**: AI-powered code generation using Ollama or Anthropic Claude
+- **Code review**: AI-powered code analysis
+- **Test execution**: Run tests for multiple languages
+- **Shell integration**: Execute PowerShell, Bash, Azure CLI commands
 
-- Build software - Generate code, scaffold projects
-- Review code - LLM-powered code review
-- Run tests - Execute and analyze test results
-- Windows integration - Execute PowerShell, Azure CLI, Batch scripts
+### API Server
+- **REST API**: HTTP endpoints for all CLI commands
+- **Multi-cloud**: Unified API for Azure, AWS, GCP costs
 
-2. Cloud Cost Tracking (NEW) :bar_chart:
+## Installation
 
-- Current costs - Real-time breakdown by service/resource
-- Historical trends - Month-over-month cost comparison
-- Budget alerts - Notifications when costs exceed thresholds
-- Reporting - Generate cost reports (daily/weekly/monthly)
-- Forecasting - Predict future costs based on usage patterns
-- Multi-cloud ready - Azure (primary), AWS/GCP in future
+### Pre-built Binaries
 
----
-
-## Software Development
-```txt
-agent build "feature description"
-agent review [--path ./src]
-agent test [--framework pytest]
-agent run "powershell_cmd"
-```
-## Cloud Cost Tracking
-```txt
-# Phase 1 - More added
-
-agent cost current                     # Current month costs
-agent cost history                     # Historical trends
-agent cost forecast                    # Cost prediction
-agent cost report [--period month]     # Generate report
-agent cost alert set --threshold 1000  # Set budget alert
-agent cost alert list                  # View alerts
-```
-## Configuration
-```txt
-agent config set azure-auth cli        # Azure auth method
-agent cost configure --subscription-id # Configure subscriptions
-```
-
-## All CLI Commands
-
-### Global Flags
-```txt
--o, --output string   Output format: table, json, csv (default "table")
-```
-
-### Config Commands
-| Command | Description |
-|---------|-------------|
-| `agent config list` | List all config settings |
-| `agent config get [key]` | Get a config value |
-| `agent config set [key] [value]` | Set a config value |
-
-### Cost Commands
-| Command | Description |
-|---------|-------------|
-| `agent cost current` | Show current month costs (from Azure) |
-| `agent cost fetch` | Fetch and store costs from Azure to local DB |
-| `agent cost summary` | Show cost summary from local storage |
-| `agent cost history` | Show historical cost trends |
-| `agent cost forecast` | Show cost prediction for next month |
-| `agent cost trend` | Show month-over-month trend analysis |
-| `agent cost alert` | Manage Budget Alerts
-| `agent cost report` | Generate report
-
-### Other Commands
-| Command | Description |
-|---------|-------------|
-| `agent completion [shell]` | Generate autocompletion script (bash/zsh/powershell) |
-
----
-
-## Usage Examples
+Download the latest release from [GitHub Releases](https://github.com/yourusername/agent/releases):
 
 ```bash
-# Configuration
-agent config list
-agent config get azure.subscription_id
-agent config set azure.subscription_id <id>
-```
-```bash
-# Cost tracking
-agent cost current                 # Current month
-agent cost fetch                  # Store costs locally
-agent cost summary                # From local DB
-agent cost history               # Historical trends
-agent cost trend                 # Trend analysis
-agent cost forecast              # Next month prediction
-```
-```bash
-# Output formats
-agent cost current -o json       # JSON output
-agent cost current -o csv        # CSV export
-agent cost trend -o json         # JSON for scripting
+# Windows
+curl -L -o agent.exe https://github.com/yourusername/agent/releases/latest/download/agent-windows-amd64.exe
 
-# Cost data takes ~24-48 hours to appear in Azure after resource usage
+# Linux
+curl -L -o agent https://github.com/yourusername/agent/releases/latest/download/agent-linux-amd64
+
+# macOS
+curl -L -o agent https://github.com/yourusername/agent/releases/latest/download/Agent-darwin-amd64
 ```
 
----
+### Package Managers
 
-## ✅ Phase 4 Complete
+```powershell
+# Scoop (Windows)
+scoop bucket add extras
+scoop install agent
 
-### New Features Added
+# Chocolatey (Windows)
+choco install agent
 
-#### LLM Providers
-- **Ollama** - Local models (requires running Ollama server)
-- **Anthropic** - Claude API (requires ANTHROPIC_API_KEY)
-- Auto-fallback between providers
+# Homebrew (macOS/Linux)
+brew install agent
+```
 
-#### Dev Commands
-
-| Command | Description |
-|---------|-------------|
-| `agent dev build [task]` | Generate code using AI |
-| `agent dev review [path]` | Review code using AI |
-| `agent dev test [path]` | Run tests |
-| `agent dev run [command]` | Run shell commands |
-
-#### Examples
+### Build from Source
 
 ```bash
-# Generate code
-agent dev build "create a hello world function in python"
+git clone https://github.com/yourusername/agent.git
+cd agent
+go build -o agent ./cmd/agent
+go build -o agent-api ./cmd/api
+```
+
+## Quick Start
+
+### 1. Configure Azure
+
+```bash
+# Set subscription ID
+agent config set azure.subscription_id YOUR_SUBSCRIPTION_ID
+
+# Or use Azure CLI auth (default)
+az login
+```
+
+### 2. Check Cloud Costs
+
+```bash
+# Current month costs
+agent cost current
+
+# Cost history
+agent cost history
+
+# Trend analysis
+agent cost trend
+```
+
+### 3. Set Budget Alerts
+
+```bash
+# Create alert
+agent cost alert add monthly-budget 100
+
+# Check alerts
+agent cost alert check
+```
+
+### 4. Generate Code
+
+```bash
+# Generate Python code
+agent dev build "create a hello world function" -l python
+
+# Generate with output file
 agent dev build "REST API endpoint" -l go -o api.go
-
-# Code review
-agent dev review path/to/file.py
-
-# Run tests
-agent dev test path/to/test.py
-
-# Run commands
-agent dev run "Get-Process" -s powershell      # PowerShell
-agent dev run "ls -la" -s bash                  # Bash
-agent dev run "vm list" -s az                   # Azure CLI
-agent dev run "dir" -s cmd                      # CMD
 ```
 
----
+### 5. Run Commands
 
-### All CLI Commands
+```bash
+# PowerShell
+agent dev run "Get-Process" -s powershell
 
-| Category | Command | Description |
-|----------|---------|-------------|
-| **Config** | `agent config` | Manage configuration |
-| **Cost** | `agent cost` | Cloud cost tracking (Azure)|
-| **Dev** | `agent dev build` | Code generation |
-| **Cloud** | `agent cloud` | (multi-cloud) |
-| | `agent dev review` | Code review |
-| | `agent dev test` | Run tests |
-| | `agent dev run` | Shell execution |
+# Azure CLI
+agent dev run "vm list" -s az
 
+# Auto-detect shell
+agent dev run "ls -la"
+```
 
+## Configuration
 
+Config file location: `~/.agent/config.yaml`
+
+```yaml
+ollama:
+  base_url: http://localhost:11434
+  model: codellama
+
+anthropic:
+  api_key: ""
+  model: claude-3-sonnet-20240229
+
+azure:
+  auth_method: cli
+  subscription_id: ""
+
+aws:
+  access_key: ""
+  secret_key: ""
+  region: us-east-1
+
+gcp:
+  project_id: ""
+
+storage:
+  path: ~/.agent/data.db
+```
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `ANTHROPIC_API_KEY` | Anthropic API key |
+| `AWS_ACCESS_KEY_ID` | AWS access key |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key |
+| `AWS_SESSION_TOKEN` | AWS session token |
+| `GCP_PROJECT_ID` | GCP project ID |
+
+## Commands
+
+### Cost Management
+
+| Command | Description |
+|---------|-------------|
+| `agent cost current` | Current month costs |
+| `agent cost fetch` | Fetch costs from cloud |
+| `agent cost summary` | Cost summary |
+| `agent cost history` | Historical trends |
+| `agent cost forecast` | Cost prediction |
+| `agent cost trend` | Trend analysis |
+| `agent cost report` | Generate report |
+| `agent cost alert add [name] [threshold]` | Create alert |
+| `agent cost alert list` | List alerts |
+| `agent cost alert check` | Check alerts |
+| `agent cost alert delete [name]` | Delete alert |
+
+### Cloud Providers
+
+| Command | Description |
+|---------|-------------|
+| `agent cloud list` | List configured providers |
+| `agent cloud all` | All providers cost summary |
+
+### Development Tools
+
+| Command | Description |
+|---------|-------------|
+| `agent dev build [task]` | Generate code |
+| `agent dev build [task] -l [language]` | Generate code in specific language |
+| `agent dev build [task] -o [file]` | Generate code to file |
+| `agent dev review [path]` | Review code |
+| `agent dev test [path]` | Run tests |
+| `agent dev run [command]` | Execute shell commands |
+| `agent dev run [command] -s [shell]` | Execute in specific shell |
+
+### Configuration
+
+| Command | Description |
+|---------|-------------|
+| `agent config list` | List config |
+| `agent config get [key]` | Get value |
+| `agent config set [key] [value]` | Set value |
+
+## API Server
+
+Start the REST API server:
+
+```bash
+agent-api -port 8080
+```
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check |
+| GET | `/api/v1/cost/azure/current` | Current costs |
+| GET | `/api/v1/cost/azure/summary` | Cost summary |
+| GET | `/api/v1/cost/azure/history` | Historical costs |
+| GET | `/api/v1/cost/azure/forecast` | Cost forecast |
+| GET | `/api/v1/cost/azure/trend` | Trend analysis |
+| GET | `/api/v1/cost/all` | All providers |
+| GET | `/api/v1/cost/report` | Generate report |
+| GET | `/api/v1/alerts` | List alerts |
+| POST | `/api/v1/alerts` | Create alert |
+| DELETE | `/api/v1/alerts?name=x` | Delete alert |
+| GET | `/api/v1/alerts/check` | Check alerts |
+| GET | `/api/v1/config` | Get config |
+
+### Example
+
+```bash
+# Start server
+agent-api -port 8080 &
+
+# Get current costs
+curl http://localhost:8080/api/v1/cost/azure/current
+
+# Get config
+curl http://localhost:8080/api/v1/config
+```
+
+## Output Formats
+
+All commands support multiple output formats:
+
+```bash
+# Table (default)
+agent cost current
+
+# JSON
+agent cost current -o json
+
+# CSV
+agent cost current -o csv
+```
+
+## Development
+
+### Requirements
+
+- Go 1.21+
+- Azure CLI (for Azure auth)
+- Ollama (optional, for local AI models)
+
+### Build
+
+```bash
+# Build CLI
+go build -o agent ./cmd/agent
+
+# Build API server
+go build -o agent-api ./cmd/api
+```
+
+### Test
+
+```bash
+go test ./...
+```
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## Support
+
+- Report bugs: [GitHub Issues](https://github.com/yourusername/agent/issues)
