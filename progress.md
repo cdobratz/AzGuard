@@ -105,10 +105,22 @@ A cross-platform CLI tool for software development and cloud cost management, ta
   - Stored in database for trend analysis
 
 ### Phase 3: Reporting & Alerts
-- [ ] Generate JSON reports
-- [ ] Generate CSV reports  
-- [ ] Budget alert configuration
-- [ ] Alert notifications (console, webhook)
+- [x] Generate JSON reports
+- [x] Generate CSV reports  
+- [x] Budget alert configuration
+- [x] Alert notifications (console)
+
+#### New Features Added
+- **Report Generation** (`agent cost report`)
+  - Summary with total cost and forecast
+  - Monthly breakdown
+  - Top services by cost
+  - JSON and CSV export formats
+- **Budget Alerts** (`agent cost alert`)
+  - `agent cost alert add [name] [threshold]` - Create alert
+  - `agent cost alert list` - List all alerts
+  - `agent cost alert check` - Check current costs against alerts
+  - `agent cost alert delete [name]` - Remove alert
 
 ### Phase 4: Software Development Tools
 - [ ] Code generation (using LLM)
