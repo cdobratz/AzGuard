@@ -184,9 +184,38 @@ A cross-platform CLI tool for software development and cloud cost management, ta
   - GCP: `GCP_PROJECT_ID`, `GOOGLE_AUTH_TOKEN`
 
 ### Phase 6: REST API
-- [ ] FastAPI server
-- [ ] HTTP endpoints for all CLI commands
-- [ ] Authentication
+- [x] FastAPI server
+- [x] HTTP endpoints for all CLI commands
+- [x] Authentication
+
+#### New Features Added
+- **API Server** (`agent-api`)
+  - Run with: `agent-api -port 8080`
+  - Uses same config as CLI
+
+- **REST Endpoints**
+  - `GET /health` - Health check
+  - `GET /api/v1/cost/azure/current` - Current costs
+  - `GET /api/v1/cost/azure/summary` - Cost summary
+  - `GET /api/v1/cost/azure/history` - Historical costs
+  - `GET /api/v1/cost/azure/forecast` - Cost forecast
+  - `GET /api/v1/cost/azure/trend` - Trend analysis
+  - `GET /api/v1/cost/all` - All providers
+  - `GET /api/v1/cost/report` - Generate report
+  - `GET /api/v1/alerts` - List alerts
+  - `POST /api/v1/alerts` - Create alert
+  - `DELETE /api/v1/alerts?name=x` - Delete alert
+  - `GET /api/v1/alerts/check` - Check alerts
+  - `GET /api/v1/config` - Get config
+
+- **Usage**
+  ```bash
+  agent-api -port 8080
+  
+  # Test
+  curl http://localhost:8080/health
+  curl http://localhost:8080/api/v1/cost/azure/current
+  ```
 
 ### Build & Distribution
 - [ ] Build Windows .exe

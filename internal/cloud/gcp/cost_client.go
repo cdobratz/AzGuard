@@ -190,29 +190,12 @@ func (c *CostClient) QueryCosts(ctx context.Context, startDate, endDate string) 
 }
 
 func (c *CostClient) GetForecast(ctx context.Context) (*CostResult, error) {
-	token, err := c.getToken()
-	if err != nil {
-		return nil, err
-	}
-
 	if c.ProjectID == "" {
 		c.ProjectID = os.Getenv("GCP_PROJECT_ID")
 	}
 
-	var totalCost float64
-	currency := "USD"
-
-	now := time.Now()
-	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
-	daysInMonth := 32 - time.Date(now.Year(), now.Month(), 32, 0, 0, 0, 0, time.UTC).Day()
-	daysPassed := now.Day()
-	
-	if daysPassed > 0 {
-		totalCost = 0
-	}
-
 	return &CostResult{
-		TotalCost: totalCost,
-		Currency:  currency,
+		TotalCost: 0,
+		Currency:  "USD",
 	}, nil
 }

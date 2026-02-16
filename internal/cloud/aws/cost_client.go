@@ -203,7 +203,7 @@ func (c *CostClient) GetForecast(ctx context.Context) (*CostResult, error) {
 		"Type":          "FORECAST",
 		"Metric":        "UNBLENDED_COST",
 		"Granularity":   "MONTHLY",
-		"ForecastPeriod": map[string]int{"Value": 1, "Unit": "MONTHS"},
+		"ForecastPeriod": map[string]string{"Value": "1", "Unit": "MONTHS"},
 	}
 
 	body, err := json.Marshal(req)
