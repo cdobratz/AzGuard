@@ -1,6 +1,6 @@
-# MissionAgents
+# MissionAgents 
 
-## Business Agent System with Cloud Cost Tracking
+## :office: Business Agent System with Cloud Cost Tracking 
 
 #### Project Overview
 
@@ -8,14 +8,14 @@ A cross-platform CLI for Windows (PowerShell, Bash, Azure CLI) that builds softw
 
 ### Capabilities
 
-1. Software Development (from before)
+1. Software Development (from before) :computer:
 
 - Build software - Generate code, scaffold projects
 - Review code - LLM-powered code review
 - Run tests - Execute and analyze test results
 - Windows integration - Execute PowerShell, Azure CLI, Batch scripts
 
-2. Cloud Cost Tracking (NEW)
+2. Cloud Cost Tracking (NEW) :bar_chart:
 
 - Current costs - Real-time breakdown by service/resource
 - Historical trends - Month-over-month cost comparison
@@ -156,9 +156,12 @@ agent dev run "dir" -s cmd                      # CMD
 | Category | Command | Description |
 |----------|---------|-------------|
 | **Config** | `agent config` | Manage configuration |
-| **Cost** | `agent cost` | Cloud cost tracking |
+| **Cost** | `agent cost` | Cloud cost tracking (Azure)|
 | **Dev** | `agent dev build` | Code generation |
+| **Cloud** | `agent cloud` | (multi-cloud) |
 | | `agent dev review` | Code review |
 | | `agent dev test` | Run tests |
 | | `agent dev run` | Shell execution |
+
+
 
