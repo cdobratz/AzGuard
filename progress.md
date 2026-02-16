@@ -85,10 +85,24 @@ A cross-platform CLI tool for software development and cloud cost management, ta
 ## 📋 Remaining Work
 
 ### Phase 2: Cost Tracking Enhancements
-- [ ] Fix forecast API (405 error)
-- [ ] Add monthly/weekly cost aggregation
-- [ ] Add trend analysis (month-over-month comparison)
-- [ ] Implement cost forecasting algorithm
+- [x] Fix forecast API (405 error)
+- [x] Add monthly/weekly cost aggregation
+- [x] Add trend analysis (month-over-month comparison)
+- [x] Implement cost forecasting algorithm
+
+#### New Features Added
+- **Trend Analysis** (`agent cost trend`)
+  - Current vs previous month comparison
+  - Change percentage calculation
+  - 6-month average
+  - Linear regression projection
+- **Local Forecasting**
+  - Algorithm-based forecasting using historical data
+  - Confidence levels (low/medium/high)
+  - Falls back to Azure API if local data insufficient
+- **Monthly Breakdown**
+  - Shows monthly cost totals in history
+  - Stored in database for trend analysis
 
 ### Phase 3: Reporting & Alerts
 - [ ] Generate JSON reports

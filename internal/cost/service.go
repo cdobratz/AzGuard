@@ -3,6 +3,7 @@ package cost
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/agent/agent/internal/cloud/azure"
 	"github.com/agent/agent/internal/storage"
@@ -81,9 +82,17 @@ func (s *Service) GetCostSummary(filter CostFilter) (*CostSummary, error) {
 }
 
 func (s *Service) GetForecast(ctx context.Context) (*Forecast, error) {
+	localForecast, err := s.GetLocalForecast()
+	if err == nil && localForecast.Confidence != "low" {
+		return localForecast, nil
+	}
+
 	result, err := s.azureCost.GetForecast(ctx, "Monthly")
 	if err != nil {
-		return nil, err
+		if localForecast != nil {
+			return localForecast, nil
+		}
+		return nil, fmt.Errorf("both local and API forecast failed: %w", err)
 	}
 
 	return &Forecast{
@@ -126,5 +135,128 @@ func (s *Service) GetCostHistory(days int) (*CostSummary, error) {
 		return nil, err
 	}
 
+	monthlyCosts, err := s.db.GetMonthlyCosts(12)
+	if err == nil && len(monthlyCosts) > 0 {
+		summary.MonthlyBreakdown = monthlyCosts
+	}
+
 	return summary, nil
+}
+
+type TrendAnalysis struct {
+	CurrentMonth    float64           `json:"current_month"`
+	PreviousMonth  float64           `json:"previous_month"`
+	ChangePercent  float64           `json:"change_percent"`
+	Trend          string            `json:"trend"`
+	AverageMonthly float64           `json:"average_monthly"`
+	Projection     float64           `json:"projection"`
+}
+
+func (s *Service) GetTrendAnalysis() (*TrendAnalysis, error) {
+	monthlyCosts, err := s.db.GetMonthlyCosts(6)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get monthly costs: %w", err)
+	}
+
+	if len(monthlyCosts) == 0 {
+		return &TrendAnalysis{
+			CurrentMonth:   0,
+			PreviousMonth: 0,
+			ChangePercent: 0,
+			Trend:         "no_data",
+			AverageMonthly: 0,
+			Projection:    0,
+		}, nil
+	}
+
+	currentMonth := monthlyCosts[0].TotalCost
+	var previousMonth float64
+	if len(monthlyCosts) > 1 {
+		previousMonth = monthlyCosts[1].TotalCost
+	}
+
+	var changePercent float64
+	if previousMonth > 0 {
+		changePercent = ((currentMonth - previousMonth) / previousMonth) * 100
+	}
+
+	trend := "stable"
+	if changePercent > 5 {
+		trend = "increasing"
+	} else if changePercent < -5 {
+		trend = "decreasing"
+	}
+
+	var sum float64
+	for _, m := range monthlyCosts {
+		sum += m.TotalCost
+	}
+	averageMonthly := sum / float64(len(monthlyCosts))
+
+	projection := s.calculateProjection(monthlyCosts)
+
+	return &TrendAnalysis{
+		CurrentMonth:   currentMonth,
+		PreviousMonth:  previousMonth,
+		ChangePercent:  math.Round(changePercent*100) / 100,
+		Trend:          trend,
+		AverageMonthly: math.Round(averageMonthly*100) / 100,
+		Projection:     math.Round(projection*100) / 100,
+	}, nil
+}
+
+func (s *Service) calculateProjection(monthlyCosts []storage.MonthlyCost) float64 {
+	if len(monthlyCosts) < 2 {
+		return 0
+	}
+
+	n := float64(len(monthlyCosts))
+	var sumX, sumY, sumXY, sumX2 float64
+
+	for i, mc := range monthlyCosts {
+		x := float64(i)
+		y := mc.TotalCost
+		sumX += x
+		sumY += y
+		sumXY += x * y
+		sumX2 += x * x
+	}
+
+	slope := (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX)
+	intercept := (sumY - slope*sumX) / n
+
+	nextMonthIndex := float64(len(monthlyCosts))
+	return slope*nextMonthIndex + intercept
+}
+
+func (s *Service) GetLocalForecast() (*Forecast, error) {
+	monthlyCosts, err := s.db.GetMonthlyCosts(6)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(monthlyCosts) < 2 {
+		return &Forecast{
+			NextMonth:  0,
+			Confidence: "low",
+		}, nil
+	}
+
+	projection := s.calculateProjection(monthlyCosts)
+	if projection < 0 {
+		projection = 0
+	}
+
+	confidence := "low"
+	if len(monthlyCosts) >= 4 {
+		confidence = "medium"
+	}
+	if len(monthlyCosts) >= 6 {
+		confidence = "high"
+	}
+
+	return &Forecast{
+		NextMonth:  math.Round(projection*100) / 100,
+		Confidence: confidence,
+	}, nil
 }

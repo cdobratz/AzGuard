@@ -232,15 +232,35 @@ func (c *CostClient) GetForecast(ctx context.Context, granularity string) (*Cost
 		return nil, fmt.Errorf("failed to get token: %w", err)
 	}
 
-	url := fmt.Sprintf("%s/subscriptions/%s/providers/Microsoft.CostManagement/forecast?api-version=%s&granularity=%s",
-		AzureManagementURL, c.SubscriptionID, CostManagementAPI, granularity)
+	url := fmt.Sprintf("%s/subscriptions/%s/providers/Microsoft.CostManagement/query?api-version=%s",
+		AzureManagementURL, c.SubscriptionID, CostManagementAPI)
 
-	httpReq, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	forecastReq := CostQueryRequest{
+		Type:      "Forecast",
+		Timeframe: "BillingMonthToDate",
+		Dataset: Dataset{
+			Granularity: granularity,
+			Aggregation: map[string]Aggregation{
+				"costTotal": {
+					Name:     "Cost",
+					Function: "Sum",
+				},
+			},
+		},
+	}
+
+	body, err := json.Marshal(forecastReq)
+	if err != nil {
+		return nil, err
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
 
 	httpReq.Header.Set("Authorization", "Bearer "+token)
+	httpReq.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.HTTPClient.Do(httpReq)
 	if err != nil {
@@ -249,29 +269,30 @@ func (c *CostClient) GetForecast(ctx context.Context, granularity string) (*Cost
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("forecast request failed with status: %d", resp.StatusCode)
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("forecast request failed with status %d: %s", resp.StatusCode, string(respBody))
 	}
 
-	var result struct {
-		Properties struct {
-			Forecasts []struct {
-				Cost     float64 `json:"cost"`
-				Currency string  `json:"currency"`
-			} `json:"forecasts"`
-		} `json:"properties"`
-	}
-
+	var result CostQueryResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err
 	}
 
 	var total float64
-	for _, f := range result.Properties.Forecasts {
-		total += f.Cost
+	var currency string
+	for _, item := range result.Value {
+		total += item.Properties.Cost
+		if item.Properties.Currency != "" {
+			currency = item.Properties.Currency
+		}
+	}
+
+	if currency == "" {
+		currency = "USD"
 	}
 
 	return &CostQueryResult{
 		TotalCost: total,
-		Currency:  "USD",
+		Currency:  currency,
 	}, nil
 }
