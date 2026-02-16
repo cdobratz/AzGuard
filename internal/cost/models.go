@@ -22,6 +22,27 @@ type Forecast struct {
 	Confidence  string  `json:"confidence"`
 }
 
+type Report struct {
+	GeneratedAt string           `json:"generated_at"`
+	Period      string           `json:"period"`
+	TotalCost   float64          `json:"total_cost"`
+	Currency    string           `json:"currency"`
+	Forecast    float64          `json:"forecast"`
+	MonthlyData []MonthlyReport  `json:"monthly_data"`
+	TopServices []ServiceCost    `json:"top_services"`
+}
+
+type MonthlyReport struct {
+	Month     string  `json:"month"`
+	TotalCost float64 `json:"total_cost"`
+	Currency  string  `json:"currency"`
+}
+
+type ServiceCost struct {
+	Service string  `json:"service"`
+	Cost    float64 `json:"cost"`
+}
+
 type CostFilter struct {
 	StartDate   string
 	EndDate     string

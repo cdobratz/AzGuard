@@ -270,3 +270,52 @@ func (db *DB) GetTotalCost(filter CostFilter) (float64, error) {
 	err := db.conn.QueryRow(query, args...).Scan(&total)
 	return total, err
 }
+
+type Alert struct {
+	ID             int64
+	Name           string
+	Threshold      float64
+	SubscriptionID string
+	Enabled        bool
+}
+
+func (db *DB) GetAlerts() ([]Alert, error) {
+	rows, err := db.conn.Query("SELECT id, name, threshold, subscription_id, enabled FROM alerts ORDER BY name")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var alerts []Alert
+	for rows.Next() {
+		var a Alert
+		if err := rows.Scan(&a.ID, &a.Name, &a.Threshold, &a.SubscriptionID, &a.Enabled); err != nil {
+			return nil, err
+		}
+		alerts = append(alerts, a)
+	}
+	return alerts, nil
+}
+
+func (db *DB) SaveAlert(alert Alert) error {
+	_, err := db.conn.Exec(`
+		INSERT INTO alerts (name, threshold, subscription_id, enabled)
+		VALUES (?, ?, ?, ?)
+	`, alert.Name, alert.Threshold, alert.SubscriptionID, alert.Enabled)
+	return err
+}
+
+func (db *DB) DeleteAlert(name string) error {
+	_, err := db.conn.Exec("DELETE FROM alerts WHERE name = ?", name)
+	return err
+}
+
+func (db *DB) GetAlertByName(name string) (*Alert, error) {
+	var a Alert
+	err := db.conn.QueryRow("SELECT id, name, threshold, subscription_id, enabled FROM alerts WHERE name = ?", name).
+		Scan(&a.ID, &a.Name, &a.Threshold, &a.SubscriptionID, &a.Enabled)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return &a, err
+}

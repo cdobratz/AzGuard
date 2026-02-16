@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/agent/agent/internal/cloud/azure"
 	"github.com/agent/agent/internal/storage"
@@ -259,4 +260,56 @@ func (s *Service) GetLocalForecast() (*Forecast, error) {
 		NextMonth:  math.Round(projection*100) / 100,
 		Confidence: confidence,
 	}, nil
+}
+
+func (s *Service) GenerateReport() (*Report, error) {
+	monthlyCosts, err := s.db.GetMonthlyCosts(12)
+	if err != nil {
+		return nil, err
+	}
+
+	summary, err := s.GetCostSummary(CostFilter{})
+	if err != nil {
+		return nil, err
+	}
+
+	forecast, _ := s.GetLocalForecast()
+
+	var monthlyData []MonthlyReport
+	for _, m := range monthlyCosts {
+		monthlyData = append(monthlyData, MonthlyReport{
+			Month:     m.Month,
+			TotalCost: m.TotalCost,
+			Currency:  m.Currency,
+		})
+	}
+
+	var topServices []ServiceCost
+	for service, cost := range summary.ByService {
+		topServices = append(topServices, ServiceCost{
+			Service: service,
+			Cost:    cost,
+		})
+	}
+
+	period := "Last 12 months"
+	if len(monthlyCosts) > 0 {
+		period = monthlyCosts[len(monthlyCosts)-1].Month + " to " + monthlyCosts[0].Month
+	}
+
+	report := &Report{
+		GeneratedAt: time.Now().Format("2006-01-02 15:04:05"),
+		Period:      period,
+		TotalCost:   summary.TotalCost,
+		Currency:    summary.Currency,
+		Forecast:    0,
+		MonthlyData: monthlyData,
+		TopServices: topServices,
+	}
+
+	if forecast != nil {
+		report.Forecast = forecast.NextMonth
+	}
+
+	return report, nil
 }

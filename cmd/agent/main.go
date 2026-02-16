@@ -206,6 +206,20 @@ func costCmd() *cobra.Command {
 		},
 	})
 
+	cmd.AddCommand(&cobra.Command{
+		Use:   "report",
+		Short: "Generate cost report",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			report, err := costSvc.GenerateReport()
+			if err != nil {
+				return fmt.Errorf("failed to generate report: %w", err)
+			}
+			return printReport(report)
+		},
+	})
+
+	cmd.AddCommand(alertCmd())
+
 	return cmd
 }
 
@@ -275,4 +289,156 @@ func printTrendAnalysis(trend *cost.TrendAnalysis) error {
 		fmt.Printf("Next Month Proj: $%.2f\n", trend.Projection)
 	}
 	return nil
+}
+
+func printReport(report *cost.Report) error {
+	switch outputFormat {
+	case "json":
+		b, err := json.MarshalIndent(report, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(b))
+	case "csv":
+		fmt.Println("month,total_cost,currency")
+		for _, m := range report.MonthlyData {
+			fmt.Printf("%s,%.2f,%s\n", m.Month, m.TotalCost, m.Currency)
+		}
+	default:
+		fmt.Println("\n📄 Cost Report - "+report.Period)
+		fmt.Println("═══════════════════════════════════")
+		fmt.Printf("Generated: %s\n", report.GeneratedAt)
+		fmt.Printf("Period:    %s\n", report.Period)
+		fmt.Printf("\n💰 Total Cost: $%.2f %s\n", report.TotalCost, report.Currency)
+		fmt.Printf("📈 Forecast:   $%.2f\n", report.Forecast)
+		
+		if len(report.TopServices) > 0 {
+			fmt.Println("\n🔝 Top Services:")
+			for _, s := range report.TopServices {
+				fmt.Printf("  %-20s $%.2f\n", s.Service+":", s.Cost)
+			}
+		}
+		
+		fmt.Printf("\n📊 Monthly Breakdown:\n")
+		for _, m := range report.MonthlyData {
+			fmt.Printf("  %s: $%.2f\n", m.Month, m.TotalCost)
+		}
+	}
+	return nil
+}
+
+func alertCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "alert",
+		Short: "Manage budget alerts",
+	}
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "list",
+		Short: "List all alerts",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			alerts, err := db.GetAlerts()
+			if err != nil {
+				return err
+			}
+			if len(alerts) == 0 {
+				fmt.Println("No alerts configured")
+				return nil
+			}
+			fmt.Println("\n🔔 Budget Alerts")
+			fmt.Println("─────────────────────────────")
+			for _, a := range alerts {
+				status := "✅ Enabled"
+				if !a.Enabled {
+					status = "❌ Disabled"
+				}
+				fmt.Printf("%s - $%.2f (%s)\n", a.Name, a.Threshold, status)
+			}
+			return nil
+		},
+	})
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "add [name] [threshold]",
+		Short: "Add a new budget alert",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var threshold float64
+			fmt.Sscanf(args[1], "%f", &threshold)
+			alert := storage.Alert{
+				Name:      args[0],
+				Threshold: threshold,
+				Enabled:   true,
+			}
+			if err := db.SaveAlert(alert); err != nil {
+				return err
+			}
+			fmt.Printf("Alert '%s' created with threshold $%.2f\n", args[0], threshold)
+			return nil
+		},
+	})
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "check",
+		Short: "Check current costs against alerts",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			startDate, endDate := cost.GetCurrentMonthDateRange()
+			summary, err := costSvc.GetCostSummary(cost.CostFilter{
+				StartDate: startDate,
+				EndDate:   endDate,
+			})
+			if err != nil {
+				return err
+			}
+
+			alerts, err := db.GetAlerts()
+			if err != nil {
+				return err
+			}
+
+			if len(alerts) == 0 {
+				fmt.Println("No alerts configured")
+				return nil
+			}
+
+			fmt.Println("\n🔔 Alert Status")
+			fmt.Println("─────────────────────────────")
+			fmt.Printf("Current costs: $%.2f\n\n", summary.TotalCost)
+
+			triggered := false
+			for _, a := range alerts {
+				if !a.Enabled {
+					continue
+				}
+				percent := (summary.TotalCost / a.Threshold) * 100
+				status := "✅ OK"
+				if summary.TotalCost >= a.Threshold {
+					status = "🚨 TRIGGERED"
+					triggered = true
+				}
+				fmt.Printf("%s: $%.2f / $%.2f (%.1f%%) %s\n", 
+					a.Name, summary.TotalCost, a.Threshold, percent, status)
+			}
+
+			if triggered {
+				fmt.Println("\n⚠️  Budget alerts triggered!")
+			}
+			return nil
+		},
+	})
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "delete [name]",
+		Short: "Delete an alert",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := db.DeleteAlert(args[0]); err != nil {
+				return err
+			}
+			fmt.Printf("Alert '%s' deleted\n", args[0])
+			return nil
+		},
+	})
+
+	return cmd
 }
