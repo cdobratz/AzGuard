@@ -47,6 +47,6 @@ changelog:
 release:
   github:
     owner: cdobratz
-    name: AzGuard
+    name: MissionAgents
   draft: false
   prerelease: auto
