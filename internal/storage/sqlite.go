@@ -119,7 +119,7 @@ func (db *DB) SaveCostRecords(records []CostRecord) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	stmt, err := tx.Prepare(`
 		INSERT INTO cost_records (subscription_id, resource_group, service_name, cost, currency, date)
