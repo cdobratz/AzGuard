@@ -250,7 +250,9 @@ func budgetCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var amount float64
-			fmt.Sscanf(args[0], "%f", &amount)
+			if _, err := fmt.Sscanf(args[0], "%f", &amount); err != nil {
+				return fmt.Errorf("invalid amount: %w", err)
+			}
 
 			// Validate amount
 			if amount < 1 || amount > 100 {
