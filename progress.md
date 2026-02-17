@@ -52,11 +52,11 @@ azguard cleanup          Cleanup guide
 - [ ] Clean up code
 
 ### Phase 2: Distribution
-- [ ] Set up GitHub repo
-- [ ] Configure GoReleaser
-- [ ] Add to Homebrew
-- [ ] Add to Scoop
-- [ ] Create install script (azguard.dev)
+- [x] Set up GitHub repo
+- [x] Configure GoReleaser
+- [x] Create install script
+- [ ] Add to Homebrew (formula ready, needs release)
+- [ ] Add to Scoop (manifest ready, needs release)
 
 ### Phase 3: Growth
 - [ ] Blog post launch
@@ -101,5 +101,5 @@ azguard/
 
 ## Links
 
-- GitHub: (to be created)
+- GitHub: https://github.com/cdobratz/AzGuard
 - Website: https://azguard.dev (to be created)
