@@ -1,0 +1,72 @@
+# .goreleaser.yaml
+# Build configuration for azguard
+
+project_name: azguard
+
+builds:
+  - id: azguard
+    binary: azguard
+    main: ./cmd/agent/main.go
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: default
+    format: zip
+    format_overrides:
+      - goos: linux
+        format: tar.gz
+    files:
+      - configs/*
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+
+release:
+  github:
+    owner: cdobratz
+    name: AzGuard
+  draft: false
+  prerelease: auto
+
+brew:
+  - tap:
+      owner: cdobratz
+      name: homebrew-azguard
+    name: azguard
+    description: "One command to make sure your Azure free tier doesn't surprise you with a bill"
+    homepage: "https://github.com/cdobratz/AzGuard"
+    license: "MIT"
+    skip_upload: false
+
+scoop:
+  - bucket:
+      owner: cdobratz
+      name: azguard-bucket
+    name: azguard
+    description: "One command to make sure your Azure free tier doesn't surprise you with a bill"
+    homepage: "https://github.com/cdobratz/AzGuard"
+    license: "MIT"
+    skip_upload: false
