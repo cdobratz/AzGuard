@@ -50,23 +50,3 @@ release:
     name: AzGuard
   draft: false
   prerelease: auto
-
-brew:
-  - tap:
-      owner: cdobratz
-      name: homebrew-azguard
-    name: azguard
-    description: "One command to make sure your Azure free tier doesn't surprise you with a bill"
-    homepage: "https://github.com/cdobratz/AzGuard"
-    license: "MIT"
-    skip_upload: false
-
-scoop:
-  - bucket:
-      owner: cdobratz
-      name: azguard-bucket
-    name: azguard
-    description: "One command to make sure your Azure free tier doesn't surprise you with a bill"
-    homepage: "https://github.com/cdobratz/AzGuard"
-    license: "MIT"
-    skip_upload: false
