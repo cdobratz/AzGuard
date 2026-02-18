@@ -83,12 +83,16 @@ curl -sSL https://azguard.dev/install.sh | bash
 
 ```powershell
 # Scoop (Windows)
-scoop bucket add extras
+scoop bucket add azguard https://github.com/cdobratz/scoop-azguard
 scoop install azguard
+```
 
+```bash
 # Homebrew (macOS/Linux)
-brew install azguard
+brew install cdobratz/azguard/azguard
+```
 
+```powershell
 # Chocolatey (Windows)
 choco install azguard
 ```
@@ -96,8 +100,8 @@ choco install azguard
 ### Build from Source
 
 ```bash
-git clone https://github.com/azguard/azguard.git
-cd azguard
+git clone https://github.com/cdobratz/AzGuard.git
+cd AzGuard
 go build -o azguard ./cmd/agent
 ```
 
