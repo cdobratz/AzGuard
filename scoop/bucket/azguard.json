@@ -6,7 +6,7 @@
   "architecture": {
     "64bit": {
       "url": "https://github.com/cdobratz/AzGuard/releases/download/v1.0.0/azguard_1.0.0_windows_amd64.zip",
-      "hash": "sha256:721106b2f33c90d38fa9c0685f6a76304d8a6c67cbecb5056d81704fbe7ff0aa"
+      "hash": "sha256:cc32f0e0463dfa48eef6de100b04ba309cc5eb7ceb714b263d822c8bb0bd87c1"
     }
   },
   "bin": "azguard.exe",
