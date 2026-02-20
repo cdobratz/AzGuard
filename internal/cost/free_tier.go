@@ -29,7 +29,7 @@ func LoadFreeTierConfig() (*FreeTierConfig, error) {
 	paths := []string{
 		"configs/free_tier_limits.yaml",
 		"./configs/free_tier_limits.yaml",
-		filepath.Join(os.Getenv("HOME"), ".azguard", "free_tier_limits.yaml"),
+		filepath.Join(func() string { h, _ := os.UserHomeDir(); return h }(), ".azguard", "free_tier_limits.yaml"),
 	}
 
 	var config *FreeTierConfig
