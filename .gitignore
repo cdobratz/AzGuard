@@ -1,0 +1,29 @@
+# Binaries
+azguard
+azguard.exe
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Build artifacts
+dist/
+*.test
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Config and data (user-specific)
+.azguard/
+*.db
+
+# Go workspace
+vendor/
