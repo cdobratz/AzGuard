@@ -14,6 +14,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Version information (set by goreleaser at build time)
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 var (
 	cfg          *config.Config
 	db           *storage.DB
@@ -68,6 +75,20 @@ Examples:
 
 	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "table", "Output format: table, json, csv")
 
+	// Add version flag
+	var showVersion bool
+	rootCmd.Flags().BoolVarP(&showVersion, "version", "v", false, "Show version information")
+	rootCmd.Run = func(cmd *cobra.Command, args []string) {
+		if showVersion {
+			fmt.Printf("azguard version %s\n", version)
+			fmt.Printf("commit: %s\n", commit)
+			fmt.Printf("built: %s\n", date)
+			return
+		}
+		_ = cmd.Help()
+	}
+
+	rootCmd.AddCommand(versionCmd())
 	rootCmd.AddCommand(scanCmd())
 	rootCmd.AddCommand(watchCmd())
 	rootCmd.AddCommand(budgetCmd())
@@ -80,6 +101,18 @@ Examples:
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
+	}
+}
+
+func versionCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "version",
+		Short: "Show version information",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("azguard version %s\n", version)
+			fmt.Printf("commit: %s\n", commit)
+			fmt.Printf("built: %s\n", date)
+		},
 	}
 }
 
