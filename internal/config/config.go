@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/azguard/azguard/internal/cloud/azure"
 	"github.com/spf13/viper"
 )
 
@@ -95,6 +96,21 @@ func Load(configPath string) (*Config, error) {
 
 	cfg.Storage.Path = expandHome(cfg.Storage.Path)
 	cfg.Ollama.BaseURL = expandHome(cfg.Ollama.BaseURL)
+
+	// Auto-detect subscription ID from Azure CLI if not set or invalid
+	if cfg.Azure.SubscriptionID == "" {
+		if subID, err := azure.GetSubscriptionIDFromCLI(); err == nil {
+			cfg.Azure.SubscriptionID = subID
+		}
+	} else {
+		// Validate the subscription ID and try to auto-detect if invalid
+		if err := azure.ValidateSubscriptionID(cfg.Azure.SubscriptionID); err != nil {
+			// Try to auto-detect from Azure CLI as fallback
+			if subID, cliErr := azure.GetSubscriptionIDFromCLI(); cliErr == nil {
+				cfg.Azure.SubscriptionID = subID
+			}
+		}
+	}
 
 	return cfg, nil
 }
