@@ -104,6 +104,10 @@ type CostRecord struct {
 }
 
 func (c *CostClient) QueryCosts(ctx context.Context, req CostQueryRequest) (*CostQueryResult, error) {
+	if c.SubscriptionID == "" {
+		return nil, fmt.Errorf("subscription ID is not configured; run 'azguard config set subscription YOUR_SUBSCRIPTION_ID'")
+	}
+
 	token, err := c.getToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token: %w", err)
@@ -227,6 +231,10 @@ func (c *CostClient) QueryCostsByResourceGroup(ctx context.Context, startDate, e
 }
 
 func (c *CostClient) GetForecast(ctx context.Context, granularity string) (*CostQueryResult, error) {
+	if c.SubscriptionID == "" {
+		return nil, fmt.Errorf("subscription ID is not configured; run 'azguard config set subscription YOUR_SUBSCRIPTION_ID'")
+	}
+
 	token, err := c.getToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token: %w", err)

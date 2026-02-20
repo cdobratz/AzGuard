@@ -161,7 +161,7 @@ Shows which services are approaching or exceeding their free allocations.`,
 			fmt.Println("═══════════════════════════════")
 
 			if len(summary.ByService) == 0 {
-				fmt.Println("No costs recorded yet. Run 'azguard fetch' first.")
+			fmt.Println("No costs recorded yet. Run 'azguard cost fetch' first.")
 				return nil
 			}
 
@@ -348,7 +348,7 @@ func resourcesCmd() *cobra.Command {
 			fmt.Println("\n📋 Azure Resources")
 			fmt.Println("═══════════════════════════════")
 			fmt.Println("This feature requires Azure CLI integration.")
-			fmt.Println("Run: az cli resource list --output table")
+			fmt.Println("Run: az resource list --output table")
 			fmt.Println()
 			fmt.Println("To check specific resources:")
 			fmt.Println("  az vm list -o table")
