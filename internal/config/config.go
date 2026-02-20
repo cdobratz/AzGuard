@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -56,7 +57,7 @@ func Load(configPath string) (*Config, error) {
 	
 	viper.SetConfigType("yaml")
 	viper.SetConfigName("config")
-	viper.AddConfigPath(home + "/.agent")
+	viper.AddConfigPath(home + "/.azguard")
 	viper.AddConfigPath(".")
 	viper.AddConfigPath(configPath)
 
@@ -64,7 +65,7 @@ func Load(configPath string) (*Config, error) {
 	viper.SetDefault("ollama.model", "codellama")
 	viper.SetDefault("anthropic.model", "claude-3-sonnet-20240229")
 	viper.SetDefault("azure.auth_method", "cli")
-	viper.SetDefault("storage.path", "$HOME/.agent/data.db")
+	viper.SetDefault("storage.path", "~/.azguard/data.db")
 
 	envFile := os.Getenv("AGENT_ENV_FILE")
 	if envFile != "" {
@@ -115,6 +116,10 @@ func expandHome(path string) string {
 	if len(path) > 0 && path[0] == '~' {
 		home, _ := os.UserHomeDir()
 		return home + path[1:]
+	}
+	if strings.HasPrefix(path, "$HOME") {
+		home, _ := os.UserHomeDir()
+		return home + path[5:]
 	}
 	return path
 }
