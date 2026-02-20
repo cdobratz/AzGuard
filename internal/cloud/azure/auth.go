@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -131,4 +132,53 @@ func NewTokenProvider(authMethod string, config map[string]string) (TokenProvide
 	default:
 		return nil, fmt.Errorf("unknown auth method: %s", authMethod)
 	}
+}
+
+// GetSubscriptionIDFromCLI retrieves the default subscription ID from Azure CLI
+func GetSubscriptionIDFromCLI() (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "az", "account", "show", "--output", "json")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to get Azure account info: %w (run 'az login' first)", err)
+	}
+
+	var result struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(output, &result); err != nil {
+		return "", fmt.Errorf("failed to parse account info: %w", err)
+	}
+
+	if result.ID == "" {
+		return "", fmt.Errorf("no subscription ID found in Azure CLI output")
+	}
+
+	return result.ID, nil
+}
+
+// ValidateSubscriptionID checks if a subscription ID is valid
+func ValidateSubscriptionID(subscriptionID string) error {
+	if subscriptionID == "" {
+		return fmt.Errorf("subscription ID is empty")
+	}
+
+	// Check for common placeholder values
+	placeholders := []string{"providers", "YOUR_SUBSCRIPTION_ID", "YOUR_SUB_ID", "<subscription-id>", "subscription-id"}
+	for _, placeholder := range placeholders {
+		if strings.EqualFold(subscriptionID, placeholder) {
+			return fmt.Errorf("subscription ID appears to be a placeholder value ('%s'). Run 'azguard config set subscription YOUR_ACTUAL_SUBSCRIPTION_ID' or 'az login' to configure", subscriptionID)
+		}
+	}
+
+	// Validate GUID format (Azure subscription IDs are GUIDs)
+	// Format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+	guidPattern := regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	if !guidPattern.MatchString(subscriptionID) {
+		return fmt.Errorf("subscription ID '%s' does not match the expected GUID format. Run 'az account list' to find your subscription ID", subscriptionID)
+	}
+
+	return nil
 }
