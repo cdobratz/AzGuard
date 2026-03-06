@@ -1,0 +1,135 @@
+# AWS Free Tier Limits
+# These are the limits for AWS's free tier
+# Used by azguard to detect potential overages
+# Reference: https://aws.amazon.com/free/
+
+services:
+  # EC2 - Elastic Compute Cloud
+  ec2:
+    description: "Linux t2.micro or t3.micro instance"
+    limit: 750
+    unit: "hours/month"
+    duration: "12 months"
+    warning_threshold: 0.8
+
+  # S3 - Simple Storage Service
+  s3:
+    description: "Standard storage"
+    limit: 5
+    unit: "GB"
+    duration: "12 months"
+    requests:
+      get: 20000
+      put: 2000
+    warning_threshold: 0.8
+
+  # Lambda
+  lambda:
+    description: "AWS Lambda requests"
+    limit: 1000000
+    unit: "requests/month"
+    duration: "always free"
+    compute_gb_seconds: 400000
+    warning_threshold: 0.8
+
+  # RDS - Relational Database Service
+  rds:
+    description: "db.t2.micro or db.t3.micro Single-AZ"
+    limit: 750
+    unit: "hours/month"
+    duration: "12 months"
+    storage_gb: 20
+    warning_threshold: 0.8
+
+  # DynamoDB
+  dynamodb:
+    description: "DynamoDB storage and throughput"
+    limit: 25
+    unit: "GB"
+    duration: "always free"
+    read_capacity_units: 25
+    write_capacity_units: 25
+    warning_threshold: 0.8
+
+  # CloudFront
+  cloudfront:
+    description: "Data transfer out"
+    limit: 1
+    unit: "TB/month"
+    duration: "always free"
+    requests: 10000000
+    warning_threshold: 0.8
+
+  # SNS - Simple Notification Service
+  sns:
+    description: "SNS publishes"
+    limit: 1000000
+    unit: "publishes/month"
+    duration: "always free"
+    warning_threshold: 0.8
+
+  # SQS - Simple Queue Service
+  sqs:
+    description: "SQS requests"
+    limit: 1000000
+    unit: "requests/month"
+    duration: "always free"
+    warning_threshold: 0.8
+
+  # CloudWatch
+  cloudwatch:
+    description: "CloudWatch metrics and alarms"
+    limit: 10
+    unit: "custom metrics"
+    duration: "always free"
+    alarms: 10
+    api_requests: 1000000
+    warning_threshold: 0.8
+
+  # API Gateway
+  api_gateway:
+    description: "REST API calls"
+    limit: 1000000
+    unit: "calls/month"
+    duration: "12 months"
+    warning_threshold: 0.8
+
+  # Cognito
+  cognito:
+    description: "Monthly active users"
+    limit: 50000
+    unit: "MAUs"
+    duration: "always free"
+    warning_threshold: 0.8
+
+  # EBS - Elastic Block Store
+  ebs:
+    description: "General Purpose SSD storage"
+    limit: 30
+    unit: "GB/month"
+    duration: "12 months"
+    warning_threshold: 0.8
+
+  # Elastic Load Balancing
+  elb:
+    description: "Application Load Balancer"
+    limit: 750
+    unit: "hours/month"
+    duration: "12 months"
+    lcus: 15
+    warning_threshold: 0.8
+
+# Budget presets (in USD)
+budgets:
+  tiny:
+    amount: 1
+    description: "Strict budget - great for free tier testing"
+  small:
+    amount: 5
+    description: "Small budget for light usage"
+  medium:
+    amount: 10
+    description: "Medium budget for moderate usage"
+  moderate:
+    amount: 20
+    description: "Higher budget with warning before limit"

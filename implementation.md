@@ -242,3 +242,33 @@ brew install agent
 | **Infrastructure** | GitHub only | Package repo required |
 
 **Recommendation**: Both are secure. Package managers are more convenient and handle updates automatically.
+
+---
+
+## Phase 4: AWS Free Tier Alerts (Added 2026-03-05)
+
+### Status: In Progress
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `internal/cloud/aws/cost_client.go` | AWS Cost Explorer & Free Tier API client with SigV4 signing |
+| `cmd/agent/aws.go` | AWS subcommand group (status, scan, alerts, resources, cost) |
+| `configs/aws_free_tier_limits.yaml` | AWS free tier service limits (EC2, S3, Lambda, RDS, etc.) |
+
+### Commands Added
+
+| Command | Description |
+|---------|-------------|
+| `azguard aws status` | Check AWS free tier usage summary |
+| `azguard aws scan` | Scan services approaching free tier limits |
+| `azguard aws alerts --threshold N` | Set alert thresholds (percentage) |
+| `azguard aws resources` | List free tier eligible services and usage |
+| `azguard aws cost` | View AWS cost breakdown for current month |
+
+### Architecture
+- AWS client follows same pattern as `internal/cloud/azure/cost_client.go`
+- Credentials resolved: config > env vars > AWS CLI
+- Uses AWS Cost Explorer API (`ce:GetCostAndUsage`) and Free Tier API (`freetier:GetFreeTierUsage`)
+- AWS Signature V4 signing implemented (no SDK dependency)
