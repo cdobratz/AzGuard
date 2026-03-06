@@ -31,8 +31,8 @@ var (
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "azguard",
-		Short: "azguard - Protect against Azure free tier bill shock",
-		Long: `One command to make sure your Azure free tier doesn't surprise you with a bill.
+	Short: "azguard - Protect against Azure and AWS free tier bill shock",
+		Long: `One command to make sure your Azure and AWS free tiers don't surprise you with a bill.
 		
 Examples:
   azguard scan              Scan for free tier overages
@@ -97,6 +97,7 @@ Examples:
 	rootCmd.AddCommand(statusCmd())
 	rootCmd.AddCommand(configCmd())
 	rootCmd.AddCommand(costCmd())
+	rootCmd.AddCommand(awsCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

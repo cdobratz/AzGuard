@@ -1,6 +1,6 @@
 # azguard
 
-**One command to make sure your Azure free tier doesn't surprise you with a bill.**
+**One command to make sure your Azure and AWS free tiers don't surprise you with a bill.**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8.svg)
@@ -11,7 +11,7 @@ Azure's free tier has 65+ services with different expiration rules, usage caps, 
 
 ## The Solution
 
-azguard monitors your Azure usage against free tier limits and alerts you before you accidentally accumulate charges.
+azguard monitors your Azure and AWS usage against free tier limits and alerts you before you accidentally accumulate charges.
 
 ## Features
 
@@ -60,16 +60,28 @@ azguard cost fetch
 
 ## Commands
 
+### Azure
+
 | Command | Description |
 |---------|-------------|
-| `azguard status` | Quick overview of your free tier status |
-| `azguard scan` | Scan for free tier overages |
+| `azguard status` | Quick overview of your Azure free tier status |
+| `azguard scan` | Scan for Azure free tier overages |
 | `azguard resources` | List resources with status indicators |
 | `azguard budget add [amount]` | Add a budget alert ($1-$100) |
 | `azguard budget list` | List all budget alerts |
 | `azguard cost current` | Show current month costs |
 | `azguard cost history` | Show cost history |
 | `azguard cleanup` | Interactive cleanup guide |
+
+### AWS
+
+| Command | Description |
+|---------|-------------|
+| `azguard aws status` | Check your AWS free tier usage |
+| `azguard aws scan` | Scan AWS services approaching limits |
+| `azguard aws alerts --threshold 80` | Set alert thresholds (percentage) |
+| `azguard aws resources` | List free tier eligible services |
+| `azguard aws cost` | View AWS cost breakdown |
 
 ## Installation
 
@@ -114,6 +126,10 @@ azure:
   auth_method: cli  # or service_principal
   subscription_id: YOUR_SUB_ID
 
+aws:
+  region: us-east-1  # optional, uses AWS CLI default
+  # credentials resolved from: config > env vars > AWS CLI
+
 storage:
   path: ~/.azguard/data.db
 ```
@@ -153,7 +169,7 @@ $20  Higher budget - warning before limit
 ## Roadmap
 
 - [ ] Daily/weekly monitoring with notifications
-- [ ] AWS free tier guard
+- [x] AWS free tier guard
 - [ ] GCP free tier guard
 - [ ] Slack/Teams notifications
 - [ ] Web dashboard
