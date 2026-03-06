@@ -257,7 +257,7 @@ func awsResourcesCmd() *cobra.Command {
 			fmt.Println("═══════════════════════════════")
 
 			if !awsCostClient.IsConfigured() {
-				fmt.Println("AWS credentials not configured. Showing known free tier services:\n")
+				fmt.Println("AWS credentials not configured. Showing known free tier services:")
 				printAWSFreeTierServices()
 				return nil
 			}
@@ -265,7 +265,7 @@ func awsResourcesCmd() *cobra.Command {
 			usages, err := awsCostClient.GetFreeTierUsage(ctx)
 			if err != nil {
 				fmt.Printf("Could not fetch live data: %v\n", err)
-				fmt.Println("Showing known free tier services:\n")
+				fmt.Println("Showing known free tier services:")
 				printAWSFreeTierServices()
 				return nil
 			}
