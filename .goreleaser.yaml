@@ -6,7 +6,7 @@ project_name: azguard
 builds:
   - id: azguard
     binary: azguard
-    main: ./cmd/agent/main.go
+    main: ./cmd/agent
     env:
       - CGO_ENABLED=0
     goos:
