@@ -247,7 +247,14 @@ brew install agent
 
 ## Phase 4: AWS Free Tier Alerts (Added 2026-03-05)
 
-### Status: In Progress
+### Status: Complete (v1.0.5 released 2026-03-06)
+
+### Release Notes
+- Fixed `go vet` errors (redundant newlines in `fmt.Println`)
+- Fixed GoReleaser config: changed `main` from file path to package path (`./cmd/agent`)
+- Added `fetch-depth: 0` to release workflow for proper changelog generation
+- Pinned `golangci-lint` to v1.55.2 for Go 1.21 compatibility
+- Updated Scoop manifest (`scoop-azguard`) and Homebrew formula (`homebrew-azguard`) with v1.0.5 SHA256 hashes
 
 ### Files Created
 
