@@ -135,7 +135,7 @@ func expandHome(path string) string {
 	}
 	if strings.HasPrefix(path, "$HOME") {
 		home, _ := os.UserHomeDir()
-		return home + path[5:]
+		return home + strings.TrimPrefix(path, "$HOME")
 	}
 	return path
 }
