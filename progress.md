@@ -55,18 +55,18 @@ azguard cleanup          Cleanup guide
 - [x] Set up GitHub repo
 - [x] Configure GoReleaser
 - [x] Create install script
-- [ ] Add to Homebrew (formula ready, needs release)
-- [ ] Add to Scoop (manifest ready, needs release)
+- [x] Add to Homebrew (formula ready, needs release)
+- [x] Add to Scoop (manifest ready, needs release)
 
 ### Phase 3: Growth
-- [ ] Blog post launch
+- [X] Blog post launch
 - [ ] Reddit/Azure community posts
 - [ ] Submit to awesome lists
 
 ### Phase 4: Features
 - [ ] Watch mode (continuous monitoring)
 - [ ] Slack/Teams notifications
-- [ ] AWS free tier guard
+- [X] AWS free tier guard
 - [ ] GCP free tier guard
 - [ ] Web dashboard
 
