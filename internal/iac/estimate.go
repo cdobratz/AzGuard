@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/azguard/azguard/internal/pricing"
+	"github.com/cdobratz/azguard/internal/pricing"
 	"gopkg.in/yaml.v3"
 )
 

@@ -6,6 +6,8 @@ services:
   # Virtual Machines
   virtual_machines:
     description: "B1s VM hours"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"
     limit: 750
     unit: "hours"
     duration: "12 months"
@@ -14,6 +16,8 @@ services:
   # Storage
   blob_storage:
     description: "Hot Blob Storage"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"
     limit: 5
     unit: "GB"
     duration: "always free"
@@ -24,6 +28,8 @@ services:
   # Functions
   functions:
     description: "Azure Functions executions"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"
     limit: 1000000
     unit: "executions"
     duration: "always free"
@@ -32,6 +38,8 @@ services:
   # SQL Database
   sql_database:
     description: "Azure SQL Database"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"
     limit: 32
     unit: "MB"
     duration: "12 months"
@@ -39,6 +47,8 @@ services:
   # App Service
   app_service:
     description: "App Service hours"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"
     limit: 750
     unit: "hours"
     duration: "12 months"
@@ -47,6 +57,8 @@ services:
   # Cosmos DB
   cosmos_db:
     description: "Cosmos DB RU/s"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"
     limit: 1000
     unit: "RU/s"
     duration: "always free"
@@ -55,6 +67,8 @@ services:
   # Cognitive Services
   cognitive_services:
     description: "Text Analytics (F0)"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"
     calls: 5000
     unit: "calls/month"
     duration: "12 months"
@@ -62,6 +76,8 @@ services:
   # Logic Apps
   logic_apps:
     description: "Logic Apps executions"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"
     limit: 750000
     unit: "executions"
     duration: "12 months"
@@ -69,6 +85,8 @@ services:
   # Event Hubs
   event_hubs:
     description: "Event Hubs"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"
     limit: 1
     unit: "million events/month"
     duration: "12 months"
@@ -76,6 +94,8 @@ services:
   # Service Bus
   service_bus:
     description: "Service Bus messages"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"
     limit: 25000
     unit: "messages/month"
     duration: "12 months"
@@ -83,6 +103,8 @@ services:
   # Notification Hubs
   notification_hubs:
     description: "Push notifications"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"
     limit: 1000000
     unit: "pushes"
     duration: "12 months"
@@ -90,6 +112,8 @@ services:
   # Key Vault
   key_vault:
     description: "Key Vault operations"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"
     limit: 10000
     unit: "operations/month"
     duration: "always free"
@@ -99,12 +123,20 @@ budgets:
   tiny:
     amount: 1
     description: "Strict budget - great for free tier testing"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"
   small:
     amount: 5
     description: "Small budget for light usage"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"
   medium:
     amount: 10
     description: "Medium budget for moderate usage"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"
   moderate:
     amount: 20
     description: "Higher budget with warning before limit"
+    source_url: "https://azure.microsoft.com/en-us/free/"
+    verified_on: "2026-10-18"

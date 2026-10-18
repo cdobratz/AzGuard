@@ -21,7 +21,7 @@ curl -sSL https://azguard.dev/install.sh | bash
 
 ```bash
 # Download latest release
-curl -L -o azguard https://github.com/azguard/azguard/releases/latest/download/azguard
+curl -L -o azguard https://github.com/cdobratz/azguard/releases/latest/download/azguard
 
 # Make executable
 chmod +x azguard
@@ -79,11 +79,13 @@ azure:
   subscription_id: YOUR_SUB_ID
   tenant_id:        # Optional (for service principal)
   client_id:        # Optional (for service principal)
-  client_secret:    # Optional (for service principal)
+  # client_secret is not stored here. Use AZURE_CLIENT_SECRET or the OS keychain.
 
 storage:
   path: ~/.azguard/data.db
 ```
+
+`azguard init --azure free|payg --aws free|paid` stores the account type once. `status` uses that answer when the cloud API does not. Pay-As-You-Go and Paid accounts are not shown as a percent of a $200 free tier.
 
 ---
 
@@ -96,9 +98,9 @@ azguard status
 ```
 
 Shows:
-- Current spend vs free tier limit
+- Azure account type (free with a spending limit, or Pay-As-You-Go)
+- Current spend
 - Active budget alerts
-- Status (OK / Warning / Over)
 
 ### Scan for Overages
 

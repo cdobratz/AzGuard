@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/azguard/azguard/internal/inventory"
-	"github.com/azguard/azguard/internal/pricing"
+	"github.com/cdobratz/azguard/internal/inventory"
+	"github.com/cdobratz/azguard/internal/pricing"
 )
 
 // EvalAWSEBS flags volumes in the available state with no attachments.

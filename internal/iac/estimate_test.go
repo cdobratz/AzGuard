@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/azguard/azguard/internal/pricing"
+	"github.com/cdobratz/azguard/internal/pricing"
 )
 
 func TestTerraformPlanFixture(t *testing.T) {

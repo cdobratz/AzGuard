@@ -3,7 +3,7 @@ package iac
 import (
 	"encoding/json"
 
-	"github.com/azguard/azguard/internal/pricing"
+	"github.com/cdobratz/azguard/internal/pricing"
 )
 
 func estimateCloudFormation(body []byte, book *pricing.Book) (Estimate, error) {

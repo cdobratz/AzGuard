@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/azguard/azguard/internal/findings"
+	"github.com/cdobratz/azguard/internal/findings"
 )
 
 func TestResourcesCommandFlags(t *testing.T) {

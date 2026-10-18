@@ -1,6 +1,6 @@
-# Contributing to Agent CLI
+# Contributing to azguard
 
-Thank you for your interest in contributing to Agent CLI!
+Thank you for your interest in contributing to azguard.
 
 ## Code of Conduct
 
@@ -46,40 +46,19 @@ Please be respectful and professional in all interactions. We follow the [Contri
 ### Setup
 
 ```bash
-# Clone repository
-git clone https://github.com/yourusername/agent.git
-cd agent
-
-# Install dependencies
+git clone https://github.com/cdobratz/AzGuard.git
+cd AzGuard
 go mod download
-
-# Build
-go build -o agent ./cmd/agent
-go build -o agent-api ./cmd/api
-
-# Test
+go build -o azguard ./cmd/azguard
 go test ./...
 ```
 
 ### Project Structure
 
 ```
-agent/
-├── cmd/
-│   ├── agent/           # CLI main entry
-│   └── api/             # API server
-├── internal/
-│   ├── config/          # Configuration
-│   ├── storage/         # Database (SQLite)
-│   ├── cloud/
-│   │   ├── azure/       # Azure integration
-│   │   ├── aws/         # AWS integration
-│   │   └── gcp/         # GCP integration
-│   ├── cost/            # Cost service
-│   ├── llm/             # LLM providers
-│   ├── tools/           # Development tools
-│   └── executors/       # Shell executors
-└── configs/             # Default configs
+cmd/azguard/     CLI main package
+internal/        config, cost, cloud clients, findings
+configs/         free-tier limit files
 ```
 
 ### Coding Standards

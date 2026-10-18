@@ -3,7 +3,7 @@ package iac
 import (
 	"strings"
 
-	"github.com/azguard/azguard/internal/pricing"
+	"github.com/cdobratz/azguard/internal/pricing"
 )
 
 func price(kind, address string, attrs map[string]any, book *pricing.Book) Line {
