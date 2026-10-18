@@ -1,0 +1,6 @@
+{
+  "Resources": {
+    "Nat": { "Type": "AWS::EC2::NatGateway", "Properties": {} },
+    "Web": { "Type": "AWS::EC2::Instance", "Properties": { "InstanceType": "t3.small" } }
+  }
+}

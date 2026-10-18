@@ -44,6 +44,31 @@ func Classify(command string) Classification {
 	return out
 }
 
+// IsIaC reports whether the command is terraform apply, pulumi up, or cdk deploy.
+func IsIaC(command string) bool {
+	for _, part := range splitChain(command) {
+		fields := skipPrefix(tokenize(part))
+		if len(fields) == 0 {
+			continue
+		}
+		switch fields[0] {
+		case "terraform":
+			if hasToken(fields, "apply") {
+				return true
+			}
+		case "pulumi":
+			if hasToken(fields, "up") {
+				return true
+			}
+		case "cdk":
+			if hasToken(fields, "deploy") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func classifyOne(command string) Classification {
 	fields := tokenize(command)
 	fields = skipPrefix(fields)

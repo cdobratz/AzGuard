@@ -18,6 +18,7 @@ import (
 func guardCmd() *cobra.Command {
 	var budget float64
 	var sessionPath string
+	var planPath string
 	cmd := &cobra.Command{
 		Use:   "guard -- <command>",
 		Short: "Block billable cloud commands over a session budget",
@@ -31,8 +32,9 @@ hookSpecificOutput JSON on stdout. The process exits 0 so Claude Code can read a
 
 A budget of 0 (the default) prints the estimate and allows the command.
 Read-only commands (describe, list, show, terraform plan, pulumi preview, cdk diff) pass through.
-terraform apply, pulumi up, and cdk deploy are treated as billable. Their monthly estimate is
-not known from the command alone, so a budget does not block them.
+terraform apply, pulumi up, and cdk deploy are billable. Pass --plan with a terraform show -json
+plan, Pulumi preview JSON, or a CDK synth / CloudFormation template to price them from the bundled
+table. Without --plan, a budget does not block those commands.
 
 The estimate is reserved when the command is allowed. Exit code 2 means the wrapper did not run it.
 
@@ -52,7 +54,15 @@ Claude Code settings snippet (.claude/settings.json):
 		SilenceErrors: true,
 		Args:          cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts := guard.Options{BudgetUSD: budget, Path: guardSessionPath(sessionPath)}
+			var plan []byte
+			if planPath != "" {
+				body, err := os.ReadFile(planPath)
+				if err != nil {
+					return err
+				}
+				plan = body
+			}
+			opts := guard.Options{BudgetUSD: budget, Path: guardSessionPath(sessionPath), Plan: plan}
 			if len(args) > 0 {
 				return guard.RunCommand(args, opts)
 			}
@@ -61,6 +71,7 @@ Claude Code settings snippet (.claude/settings.json):
 	}
 	cmd.PersistentFlags().Float64Var(&budget, "budget", 0, "Session budget in USD per month. 0 warns and allows")
 	cmd.PersistentFlags().StringVar(&sessionPath, "session", "", "Session file (default: ~/.azguard/guard-session.json)")
+	cmd.PersistentFlags().StringVar(&planPath, "plan", "", "terraform show -json, Pulumi preview JSON, or CDK/CloudFormation template")
 	cmd.AddCommand(guardReportCmd(&sessionPath))
 	return cmd
 }
