@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/azguard/azguard/internal/cloud/aws"
-	"github.com/azguard/azguard/internal/cloud/azure"
-	"github.com/azguard/azguard/internal/pricing"
+	"github.com/cdobratz/azguard/internal/cloud/aws"
+	"github.com/cdobratz/azguard/internal/cloud/azure"
+	"github.com/cdobratz/azguard/internal/pricing"
 )
 
 func TestAlertsFromRecordedFixtures(t *testing.T) {

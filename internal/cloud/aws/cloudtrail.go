@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/azguard/azguard/internal/events"
+	"github.com/cdobratz/azguard/internal/events"
 )
 
 type cloudTrailPage struct {

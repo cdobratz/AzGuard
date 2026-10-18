@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/azguard/azguard/internal/pricing"
+	"github.com/cdobratz/azguard/internal/pricing"
 )
 
 const (

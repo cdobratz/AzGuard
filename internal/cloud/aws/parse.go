@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/azguard/azguard/internal/inventory"
+	"github.com/cdobratz/azguard/internal/inventory"
 )
 
 var xmlnsRe = regexp.MustCompile(`\sxmlns(:[A-Za-z0-9_]+)?="[^"]*"`)

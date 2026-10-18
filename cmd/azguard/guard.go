@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"time"
 
-	awscloud "github.com/azguard/azguard/internal/cloud/aws"
-	"github.com/azguard/azguard/internal/cloud/azure"
-	"github.com/azguard/azguard/internal/events"
-	"github.com/azguard/azguard/internal/guard"
+	awscloud "github.com/cdobratz/azguard/internal/cloud/aws"
+	"github.com/cdobratz/azguard/internal/cloud/azure"
+	"github.com/cdobratz/azguard/internal/events"
+	"github.com/cdobratz/azguard/internal/guard"
 	"github.com/spf13/cobra"
 )
 

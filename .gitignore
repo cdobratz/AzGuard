@@ -1,6 +1,6 @@
-# Binaries
-azguard
-azguard.exe
+# Binaries built at the repo root. A bare "azguard" pattern also ignores cmd/azguard.
+/azguard
+/azguard.exe
 *.exe
 *.dll
 *.so

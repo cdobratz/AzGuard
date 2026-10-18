@@ -8,10 +8,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/azguard/azguard/internal/cloud/azure"
-	"github.com/azguard/azguard/internal/config"
-	"github.com/azguard/azguard/internal/cost"
-	"github.com/azguard/azguard/internal/storage"
+	"github.com/cdobratz/azguard/internal/account"
+	"github.com/cdobratz/azguard/internal/cloud/azure"
+	"github.com/cdobratz/azguard/internal/config"
+	"github.com/cdobratz/azguard/internal/cost"
+	"github.com/cdobratz/azguard/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -97,6 +98,7 @@ Examples:
 	rootCmd.AddCommand(guardCmd())
 	rootCmd.AddCommand(cleanupCmd())
 	rootCmd.AddCommand(statusCmd())
+	rootCmd.AddCommand(initCmd())
 	rootCmd.AddCommand(configCmd())
 	rootCmd.AddCommand(costCmd())
 	rootCmd.AddCommand(awsCmd())
@@ -134,22 +136,10 @@ func statusCmd() *cobra.Command {
 				return err
 			}
 
-			// Calculate free tier status
-			limit := 200.0 // Approximate monthly free tier value in USD
-			percentUsed := (summary.TotalCost / limit) * 100
-
-			fmt.Println("\n🛡️  Azure Free Tier Status")
+			fmt.Println("\n🛡️  Azure account")
 			fmt.Println("═══════════════════════════════")
 			fmt.Printf("Subscription: %s\n", cfg.Azure.SubscriptionID)
-			fmt.Printf("Current Spend: $%.2f / $%.2f free\n", summary.TotalCost, limit)
-
-			if percentUsed >= 100 {
-				fmt.Println("⚠️  Status: OVER LIMIT")
-			} else if percentUsed >= 80 {
-				fmt.Println("⚠️  Status: WARNING (>80%)")
-			} else {
-				fmt.Println("✅ Status: OK")
-			}
+			fmt.Print(account.FormatAzure(azureProfile(ctx), summary.TotalCost))
 
 			// Check alerts
 			alerts, err := db.GetAlerts()
@@ -205,12 +195,9 @@ Shows which services are approaching or exceeding their free allocations.`,
 				return nil
 			}
 
-			// Check each service against free tier limits
-			limit := 200.0 // Approximate monthly free tier value
-			percentUsed := (summary.TotalCost / limit) * 100
-
-			fmt.Printf("\nTotal Spend: $%.2f / $%.2f free tier\n", summary.TotalCost, limit)
-			fmt.Printf("Usage: %.1f%%\n\n", percentUsed)
+			fmt.Println()
+			fmt.Print(account.FormatAzure(azureProfile(ctx), summary.TotalCost))
+			fmt.Println()
 
 			fmt.Println("By Service:")
 			fmt.Println("─────────────────────────────────")

@@ -28,7 +28,7 @@ azguard monitors your Azure and AWS usage against free tier limits and alerts yo
 curl -sSL https://azguard.dev/install.sh | bash
 
 # Or download from releases
-curl -L -o azguard https://github.com/azguard/azguard/releases/latest/download/azguard
+curl -L -o azguard https://github.com/cdobratz/azguard/releases/latest/download/azguard
 chmod +x azguard
 ```
 
@@ -116,7 +116,13 @@ choco install azguard
 ```bash
 git clone https://github.com/cdobratz/AzGuard.git
 cd AzGuard
-go build -o azguard ./cmd/agent
+go build -o azguard ./cmd/azguard
+```
+
+Install from the module:
+
+```bash
+go install github.com/cdobratz/azguard/cmd/azguard@latest
 ```
 
 ## Configuration
@@ -127,13 +133,23 @@ Config file: `~/.azguard/config.yaml`
 azure:
   auth_method: cli  # or service_principal
   subscription_id: YOUR_SUB_ID
+  # Do not put client_secret in this file.
 
 aws:
   region: us-east-1  # optional, uses AWS CLI default
-  # credentials resolved from: config > env vars > AWS CLI
+  # Do not put access keys in this file.
 
 storage:
   path: ~/.azguard/data.db
+```
+
+Cloud secrets are read from the environment (`AZURE_CLIENT_SECRET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`) or from the OS keychain (service name `azguard`). If a config file still has those fields, the next start copies them into the keychain and removes them from the file. When the keychain is unavailable, the file is left as it is.
+
+`azguard init` records the account type once. `status` uses that answer when the cloud API does not say. A Pay-As-You-Go or Paid account is not shown as a percentage of a $200 free tier.
+
+```bash
+azguard init --azure payg --aws paid
+azguard init --azure free --aws free --azure-credit 50 --azure-credit-expires 2026-12-31
 ```
 
 ## Idle and orphaned resources
@@ -330,5 +346,5 @@ MIT License - see [LICENSE](LICENSE).
 
 ## Support
 
-- [GitHub Issues](https://github.com/azguard/azguard/issues)
-- [GitHub Discussions](https://github.com/azguard/azguard/discussions)
+- [GitHub Issues](https://github.com/cdobratz/azguard/issues)
+- [GitHub Discussions](https://github.com/cdobratz/azguard/discussions)

@@ -19,7 +19,7 @@ jobs:
           go-version: '1.21'
 
       - name: Build
-        run: go build -o azguard ./cmd/agent
+        run: go build -o azguard ./cmd/azguard
 
       - name: Test
         run: go test ./...
