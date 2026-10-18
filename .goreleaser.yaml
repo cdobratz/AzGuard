@@ -29,6 +29,7 @@ archives:
       - goos: linux
         format: tar.gz
     files:
+      - LICENSE
       - configs/*
 
 checksum:
