@@ -255,8 +255,19 @@ AWS:
 
 `azguard guard` recognizes billable commands (`az … create`, `aws … run-instances` and `create-*`, `terraform apply`, `pulumi up`, `cdk deploy`), prints an estimated monthly list price when the bundled table has one, and blocks the command when that estimate would put the session over `--budget`. A budget of 0 warns and allows. Read-only commands pass through. The wrapper exits **2** without running the command when it blocks. The estimate is reserved as soon as the command is allowed.
 
+`terraform apply`, `pulumi up`, and `cdk deploy` stay unpriced unless you pass `--plan`. The file may be:
+
+- `terraform show -json plan.out` (creates and replacements only; deletes are not subtracted)
+- `pulumi preview --json` (NDJSON engine events, or a `{"steps":[...]}` document)
+- a CDK synth template or CloudFormation JSON/YAML file (monthly run-rate of the billable types AzGuard knows, not a diff)
+- a CDK `manifest.json`; `templateFile` entries next to it are loaded
+
+The figure is the bundled list price (730 hours per month), not an invoice. A plan that contains a resource type without a bundled price does not block, because the total would be incomplete.
+
 ```bash
 azguard guard --budget 25 -- aws ec2 run-instances --instance-type t3.micro
+terraform show -json tfplan > plan.json
+azguard guard --budget 25 --plan plan.json -- terraform apply tfplan
 azguard guard report --since 2026-10-17T12:00:00Z --principal casey@contoso.com
 azguard guard report --fixture activity.json
 ```
