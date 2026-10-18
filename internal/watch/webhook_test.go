@@ -47,7 +47,11 @@ func TestWebhookPayloadAndPost(t *testing.T) {
 		if r.Header.Get("Content-Type") != "application/json" {
 			t.Errorf("content-type = %s", r.Header.Get("Content-Type"))
 		}
-		body, _ := io.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 		if err := json.Unmarshal(body, &got); err != nil {
 			t.Error(err)
 		}

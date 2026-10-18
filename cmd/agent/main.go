@@ -94,6 +94,7 @@ Examples:
 	rootCmd.AddCommand(watchCmd())
 	rootCmd.AddCommand(budgetCmd())
 	rootCmd.AddCommand(resourcesCmd())
+	rootCmd.AddCommand(guardCmd())
 	rootCmd.AddCommand(cleanupCmd())
 	rootCmd.AddCommand(statusCmd())
 	rootCmd.AddCommand(configCmd())

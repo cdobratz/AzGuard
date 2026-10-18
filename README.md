@@ -68,6 +68,7 @@ azguard cost fetch
 | `azguard scan` | Scan for Azure free tier overages |
 | `azguard resources` | Find idle and orphaned resources, with a monthly cost estimate |
 | `azguard watch` | Poll for new billable resources and alert |
+| `azguard guard` | Block billable commands that exceed a session budget |
 | `azguard budget add [amount]` | Add a budget alert ($1-$100) |
 | `azguard budget list` | List all budget alerts |
 | `azguard cost current` | Show current month costs |
@@ -249,6 +250,35 @@ AWS:
 
 - `cloudtrail:LookupEvents`
 - `ec2:DescribeRegions` only when you pass `--all-regions`
+
+## Agent guard
+
+`azguard guard` recognizes billable commands (`az … create`, `aws … run-instances` and `create-*`, `terraform apply`, `pulumi up`, `cdk deploy`), prints an estimated monthly list price when the bundled table has one, and blocks the command when that estimate would put the session over `--budget`. A budget of 0 warns and allows. Read-only commands pass through. The wrapper exits **2** without running the command when it blocks. The estimate is reserved as soon as the command is allowed.
+
+```bash
+azguard guard --budget 25 -- aws ec2 run-instances --instance-type t3.micro
+azguard guard report --since 2026-10-17T12:00:00Z --principal casey@contoso.com
+azguard guard report --fixture activity.json
+```
+
+`azguard guard report` lists billable creates from the Activity Log and CloudTrail since the session started (or `--since`). `--fixture` reads a recorded page instead of the live APIs. `--principal` matches the display name, caller, UPN, or role ARN.
+
+Claude Code can call the same check as a `PreToolUse` hook. The hook writes `hookSpecificOutput.permissionDecision` (`allow` or `deny`) and a reason, and exits 0 so Claude Code reads the JSON. Add this to `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "azguard guard --budget 25" }]
+      }
+    ]
+  }
+}
+```
+
+The session file is `~/.azguard/guard-session.json`. Report permissions are the same read-only Activity Log and `cloudtrail:LookupEvents` permissions as `watch`.
 
 ## How It Works
 

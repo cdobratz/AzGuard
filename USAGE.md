@@ -156,6 +156,10 @@ azguard resources --output json --fail-over 25
 azguard watch --once
 azguard watch --webhook "$AZGUARD_WEBHOOK"
 
+# Block a billable command when the session budget is exceeded (exit 2)
+azguard guard --budget 25 -- aws ec2 run-instances --instance-type t3.micro
+azguard guard report --fixture activity.json
+
 # Cleanup guide
 azguard cleanup
 ```

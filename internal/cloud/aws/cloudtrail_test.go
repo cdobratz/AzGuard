@@ -28,10 +28,16 @@ func TestLookupEventsRequestsBillableNames(t *testing.T) {
 		if r.Header.Get("X-Amz-Target") != "com.amazonaws.cloudtrail.v20131101.CloudTrail_20131101.LookupEvents" {
 			t.Errorf("target = %s", r.Header.Get("X-Amz-Target"))
 		}
-		body, _ := io.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 		bodies = append(bodies, string(body))
 		w.Header().Set("Content-Type", "application/x-amz-json-1.1")
-		_, _ = w.Write([]byte(`{"Events":[]}`))
+		if _, err := w.Write([]byte(`{"Events":[]}`)); err != nil {
+			t.Error(err)
+		}
 	}))
 	defer srv.Close()
 	target, err := url.Parse(srv.URL)
