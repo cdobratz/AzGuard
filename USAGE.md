@@ -148,8 +148,9 @@ azguard cost forecast
 ### Resources
 
 ```bash
-# Check running resources
+# Find idle and orphaned resources (read-only; exit 2 above --fail-over)
 azguard resources
+azguard resources --output json --fail-over 25
 
 # Cleanup guide
 azguard cleanup

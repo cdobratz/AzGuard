@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -31,12 +32,12 @@ var (
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "azguard",
-	Short: "azguard - Protect against Azure and AWS free tier bill shock",
+		Short: "azguard - Protect against Azure and AWS free tier bill shock",
 		Long: `One command to make sure your Azure and AWS free tiers don't surprise you with a bill.
 		
 Examples:
   azguard scan              Scan for free tier overages
-  azguard resources        List all resources with status
+  azguard resources        Find idle and orphaned resources
   azguard budget add 5     Add a $5 budget alert
   azguard watch            Monitor costs daily`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
@@ -101,6 +102,10 @@ Examples:
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
+		var exitErr interface{ ExitCode() int }
+		if errors.As(err, &exitErr) {
+			os.Exit(exitErr.ExitCode())
+		}
 		os.Exit(1)
 	}
 }
@@ -195,7 +200,7 @@ Shows which services are approaching or exceeding their free allocations.`,
 			fmt.Println("═══════════════════════════════")
 
 			if len(summary.ByService) == 0 {
-			fmt.Println("No costs recorded yet. Run 'azguard cost fetch' first.")
+				fmt.Println("No costs recorded yet. Run 'azguard cost fetch' first.")
 				return nil
 			}
 
@@ -371,26 +376,6 @@ func budgetCmd() *cobra.Command {
 	})
 
 	return cmd
-}
-
-func resourcesCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "resources",
-		Short: "List running resources with free tier status",
-		Long:  `Show all Azure resources and their free tier status.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("\n📋 Azure Resources")
-			fmt.Println("═══════════════════════════════")
-			fmt.Println("This feature requires Azure CLI integration.")
-			fmt.Println("Run: az resource list --output table")
-			fmt.Println()
-			fmt.Println("To check specific resources:")
-			fmt.Println("  az vm list -o table")
-			fmt.Println("  az storage account list -o table")
-			fmt.Println("  az functionapp list -o table")
-			return nil
-		},
-	}
 }
 
 func cleanupCmd() *cobra.Command {

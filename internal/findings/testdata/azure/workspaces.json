@@ -1,0 +1,30 @@
+{
+  "totalRecords": 3,
+  "count": 3,
+  "data": [
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.OperationalInsights/workspaces/ws-empty",
+      "name": "ws-empty",
+      "location": "eastus",
+      "skuName": "PerGB2018",
+      "retentionDays": 30,
+      "createdBy": "agent-sp"
+    },
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.OperationalInsights/workspaces/ws-quiet",
+      "name": "ws-quiet",
+      "location": "eastus",
+      "skuName": "PerGB2018",
+      "retentionDays": 30,
+      "createdBy": "human@contoso.com"
+    },
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.OperationalInsights/workspaces/ws-used",
+      "name": "ws-used",
+      "location": "eastus",
+      "skuName": "PerGB2018",
+      "retentionDays": 30,
+      "createdBy": "human@contoso.com"
+    }
+  ]
+}

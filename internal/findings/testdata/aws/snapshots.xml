@@ -1,0 +1,24 @@
+<DescribeSnapshotsResponse xmlns="http://ec2.amazonaws.com/doc/2016-11-15/">
+  <requestId>req-snapshots</requestId>
+  <snapshotSet>
+    <item>
+      <snapshotId>snap-old</snapshotId>
+      <volumeSize>50</volumeSize>
+      <startTime>2025-01-01T00:00:00.000Z</startTime>
+      <status>completed</status>
+      <tagSet>
+        <item><key>CreatedBy</key><value>ci-bot</value></item>
+        <item><key>Name</key><value>old-root</value></item>
+      </tagSet>
+    </item>
+    <item>
+      <snapshotId>snap-recent</snapshotId>
+      <volumeSize>20</volumeSize>
+      <startTime>2026-10-10T00:00:00.000Z</startTime>
+      <status>completed</status>
+      <tagSet>
+        <item><key>CreatedBy</key><value>human</value></item>
+      </tagSet>
+    </item>
+  </snapshotSet>
+</DescribeSnapshotsResponse>

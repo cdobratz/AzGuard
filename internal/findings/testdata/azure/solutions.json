@@ -1,0 +1,9 @@
+{
+  "totalRecords": 1,
+  "count": 1,
+  "data": [
+    {
+      "workspaceId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.OperationalInsights/workspaces/ws-used"
+    }
+  ]
+}

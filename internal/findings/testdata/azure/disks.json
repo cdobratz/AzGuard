@@ -1,0 +1,24 @@
+{
+  "totalRecords": 2,
+  "count": 2,
+  "data": [
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Compute/disks/orphan",
+      "name": "orphan",
+      "location": "eastus",
+      "diskState": "Unattached",
+      "sizeGB": 128,
+      "skuName": "Standard_LRS",
+      "createdBy": "agent-sp"
+    },
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Compute/disks/osdisk",
+      "name": "osdisk",
+      "location": "eastus",
+      "diskState": "Attached",
+      "sizeGB": 128,
+      "skuName": "Standard_LRS",
+      "createdBy": "human@contoso.com"
+    }
+  ]
+}
