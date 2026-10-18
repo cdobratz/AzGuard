@@ -1,0 +1,29 @@
+{
+  "BillingCurrency": "USD",
+  "Items": [
+    {
+      "currencyCode": "USD",
+      "retailPrice": 0,
+      "unitPrice": 0,
+      "armRegionName": "eastus",
+      "meterName": "Basic IPv4 Static Public IP",
+      "productName": "IP Addresses",
+      "skuName": "Basic",
+      "serviceName": "Virtual Network",
+      "unitOfMeasure": "1 Hour",
+      "type": "Consumption"
+    },
+    {
+      "currencyCode": "USD",
+      "retailPrice": 0.005,
+      "unitPrice": 0.005,
+      "armRegionName": "eastus",
+      "meterName": "Standard IPv4 Static Public IP",
+      "productName": "IP Addresses",
+      "skuName": "Standard",
+      "serviceName": "Virtual Network",
+      "unitOfMeasure": "1 Hour",
+      "type": "Consumption"
+    }
+  ]
+}

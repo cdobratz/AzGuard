@@ -1,0 +1,21 @@
+<DescribeLoadBalancersResponse xmlns="http://elasticloadbalancing.amazonaws.com/doc/2015-12-01/">
+  <DescribeLoadBalancersResult>
+    <LoadBalancers>
+      <member>
+        <LoadBalancerArn>arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/app/web/abc</LoadBalancerArn>
+        <LoadBalancerName>web</LoadBalancerName>
+        <Type>application</Type>
+      </member>
+      <member>
+        <LoadBalancerArn>arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/app/api/def</LoadBalancerArn>
+        <LoadBalancerName>api</LoadBalancerName>
+        <Type>application</Type>
+      </member>
+      <member>
+        <LoadBalancerArn>arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/app/lonely/ghi</LoadBalancerArn>
+        <LoadBalancerName>lonely</LoadBalancerName>
+        <Type>application</Type>
+      </member>
+    </LoadBalancers>
+  </DescribeLoadBalancersResult>
+</DescribeLoadBalancersResponse>

@@ -66,7 +66,9 @@ azguard cost fetch
 |---------|-------------|
 | `azguard status` | Quick overview of your Azure free tier status |
 | `azguard scan` | Scan for Azure free tier overages |
-| `azguard resources` | List resources with status indicators |
+| `azguard resources` | Find idle and orphaned resources, with a monthly cost estimate |
+| `azguard watch` | Poll for new billable resources and alert |
+| `azguard guard` | Block billable commands that exceed a session budget |
 | `azguard budget add [amount]` | Add a budget alert ($1-$100) |
 | `azguard budget list` | List all budget alerts |
 | `azguard cost current` | Show current month costs |
@@ -133,6 +135,150 @@ aws:
 storage:
   path: ~/.azguard/data.db
 ```
+
+## Idle and orphaned resources
+
+`azguard resources` is read-only. It finds resources that are easy to forget and that keep billing: unattached disks, idle public IPs, NAT gateways, stopped-but-still-billed VMs, old snapshots, and the AWS equivalents. It does not delete anything.
+
+```bash
+azguard resources
+azguard resources --output json
+azguard resources --output csv --fail-over 25
+azguard resources --cloud aws --region us-east-1
+azguard resources --all-regions
+azguard resources --rules
+azguard resources --schema
+```
+
+AWS is scanned in the configured region unless you pass `--all-regions`. `--snapshot-days` defaults to 30. `--fail-over 25` exits **2** when the deduplicated estimated monthly total is greater than $25. A negative value (the default) disables that check.
+
+`safe_to_delete` means nothing is attached to the resource. It does not mean deletion is free of data loss. Read `safe_to_delete_hint`. Created-by is filled from Azure `systemData.createdBy` or an AWS `CreatedBy` / `Owner` tag when that value exists.
+
+Estimates use the Azure Retail Prices API and the AWS Price List API when those calls succeed, and a bundled list-price table otherwise (730 hours per month). `price_source` on each finding is `azure-retail`, `aws-price-list`, `bundled`, or `unpriced`. The figure is a list price, not an invoice. Two rules can match one resource (an idle Elastic IP is both `aws.eip.unassociated` and `aws.ipv4.public`); `total_estimated_monthly_usd` counts that resource once.
+
+### JSON schema (`azguard.findings.v1`)
+
+`azguard resources --output json` prints an object with `schema`, `schema_version`, `generated_at`, `findings`, `total_estimated_monthly_usd`, `currency`, and `errors`. Each finding has `resource_id`, `name`, `provider`, `region`, `rule_id`, `title`, `evidence`, `estimated_monthly_usd`, `currency`, `created_by`, `safe_to_delete`, `safe_to_delete_hint`, and `price_source`. `azguard resources --schema` prints the JSON Schema document.
+
+CSV columns are the finding fields above, in that order.
+
+### Rules
+
+| Rule | What it flags |
+|------|----------------|
+| `azure.disk.unattached` | Managed disk with `diskState` Unattached |
+| `azure.publicip.unassociated` | Public IP with no IP configuration |
+| `azure.nic.unattached` | NIC with no VM and no private endpoint |
+| `azure.vm.stopped_allocated` | VM power state Stopped (allocated), which is still billed. Deallocated VMs are not listed |
+| `azure.appserviceplan.empty` | App Service plan with zero sites |
+| `azure.snapshot.old` | Snapshot older than `--snapshot-days` |
+| `azure.natgateway.no_subnets` | NAT gateway with no subnets |
+| `azure.loganalytics.empty_ingestion` | Workspace with no solutions that is still ingesting data |
+| `aws.ebs.unattached` | EBS volume in `available` with no attachments |
+| `aws.eip.unassociated` | Elastic IP that is not associated |
+| `aws.ipv4.public` | Every public IPv4 address (charged whether or not it is attached) |
+| `aws.natgateway.idle` | NAT gateway with 0 `BytesOutToDestination` over 7 days |
+| `aws.vpcendpoint.interface` | Interface VPC endpoint (gateway endpoints are free and omitted) |
+| `aws.ec2.stopped_with_ebs` | Stopped instance that still has EBS attached |
+| `aws.elb.no_healthy_targets` | Load balancer with no healthy targets |
+| `aws.snapshot.old` | Snapshot older than `--snapshot-days` |
+
+### Read-only permissions
+
+Give the Azure subscription the built-in **Reader** role. The calls are:
+
+- `Microsoft.ResourceGraph/resources/read`
+- `Microsoft.Resources/subscriptions/resources/read`
+- `Microsoft.OperationalInsights/workspaces/usages/read`
+
+The Retail Prices API at `prices.azure.com` is public and does not use subscription credentials.
+
+On AWS, attach **ReadOnlyAccess**, or only these actions:
+
+- `ec2:DescribeVolumes`
+- `ec2:DescribeAddresses`
+- `ec2:DescribeNetworkInterfaces`
+- `ec2:DescribeNatGateways`
+- `ec2:DescribeVpcEndpoints`
+- `ec2:DescribeInstances`
+- `ec2:DescribeSnapshots`
+- `ec2:DescribeRegions`
+- `elasticloadbalancing:DescribeLoadBalancers`
+- `elasticloadbalancing:DescribeTargetGroups`
+- `elasticloadbalancing:DescribeTargetHealth`
+- `cloudwatch:GetMetricStatistics`
+- `pricing:GetProducts`
+
+Do not grant delete, terminate, release, stop, or deallocate permissions for this command.
+
+## Watch for new billable resources
+
+`azguard watch` polls on an interval (default **15 minutes**) for resource creates. It is not a live stream and it does not promise real-time alerts.
+
+Provider delay, checked against the published service behavior and **not measured on a live subscription in CI** (tests use recorded fixtures):
+
+- Azure Activity Log management events usually show up within a few minutes. Microsoft does not publish a hard delivery SLA for that feed.
+- AWS CloudTrail `LookupEvents` usually returns an event within about 15 minutes of the API call, and it can take longer.
+
+An alert arrives after that delay, on the next poll. With the default interval, expect on the order of the provider delay plus up to 15 minutes.
+
+```bash
+azguard watch
+azguard watch --once
+azguard watch --interval 15m --webhook "$AZGUARD_WEBHOOK"
+azguard watch --webhook-schema
+azguard watch --desktop=false
+```
+
+Each new event prints the principal and an estimated monthly list price from the bundled table (730 hours per month), not an invoice. A service principal, an app-only Azure token, an IAM access key, or an assumed role that is not IAM Identity Center (`AWSReservedSSO`) is marked as automation. A user UPN and an `AWSReservedSSO` role are not.
+
+Seen event IDs are stored in `~/.azguard/watch.json` (mode 0600). A failed webhook is not marked seen, so the next poll retries it. A missing desktop notifier is logged and does not stop the poll.
+
+### Webhook body
+
+`--webhook` POSTs JSON that Slack reads from `text` and Discord reads from `content`. Both fields are the same message. `username` is `azguard`. `attachments` follows Slack's attachment shape (orange `#e67e22` when any principal is automation, blue `#3498db` otherwise). Discord ignores `attachments` and displays `content`. `azguard watch --webhook-schema` prints the shape.
+
+### Read-only permissions
+
+`watch` only reads logs. It does not call the price-list APIs.
+
+Azure, in addition to the Reader role used by `resources`:
+
+- `Microsoft.Insights/eventtypes/values/read` (Activity Log management events)
+
+AWS:
+
+- `cloudtrail:LookupEvents`
+- `ec2:DescribeRegions` only when you pass `--all-regions`
+
+## Agent guard
+
+`azguard guard` recognizes billable commands (`az … create`, `aws … run-instances` and `create-*`, `terraform apply`, `pulumi up`, `cdk deploy`), prints an estimated monthly list price when the bundled table has one, and blocks the command when that estimate would put the session over `--budget`. A budget of 0 warns and allows. Read-only commands pass through. The wrapper exits **2** without running the command when it blocks. The estimate is reserved as soon as the command is allowed.
+
+```bash
+azguard guard --budget 25 -- aws ec2 run-instances --instance-type t3.micro
+azguard guard report --since 2026-10-17T12:00:00Z --principal casey@contoso.com
+azguard guard report --fixture activity.json
+```
+
+`azguard guard report` lists billable creates from the Activity Log and CloudTrail since the session started (or `--since`). `--fixture` reads a recorded page instead of the live APIs. `--principal` matches the display name, caller, UPN, or role ARN.
+
+Claude Code can call the same check as a `PreToolUse` hook. The hook writes `hookSpecificOutput.permissionDecision` (`allow` or `deny`) and a reason, and exits 0 so Claude Code reads the JSON. Add this to `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "azguard guard --budget 25" }]
+      }
+    ]
+  }
+}
+```
+
+The session file is `~/.azguard/guard-session.json`. Report permissions are the same read-only Activity Log and `cloudtrail:LookupEvents` permissions as `watch`.
 
 ## How It Works
 

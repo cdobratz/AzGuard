@@ -1,0 +1,51 @@
+{
+  "value": [
+    {
+      "eventDataId": "evt-pip",
+      "eventTimestamp": "2026-10-17T12:00:00.0000000Z",
+      "operationName": {
+        "value": "Microsoft.Network/publicIPAddresses/write",
+        "localizedValue": "Create or Update Public Ip Address"
+      },
+      "status": { "value": "Succeeded" },
+      "caller": "11111111-2222-3333-4444-555555555555",
+      "resourceId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/publicIPAddresses/pip1",
+      "claims": {
+        "idtyp": "app",
+        "appid": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        "http://schemas.microsoft.com/identity/claims/objectidentifier": "11111111-2222-3333-4444-555555555555"
+      }
+    },
+    {
+      "eventDataId": "evt-vm-user",
+      "eventTimestamp": "2026-10-17T12:05:00Z",
+      "operationName": { "value": "Microsoft.Compute/virtualMachines/write" },
+      "status": { "value": "Succeeded" },
+      "caller": "casey@contoso.com",
+      "resourceId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm1",
+      "claims": {
+        "idtyp": "user",
+        "upn": "casey@contoso.com",
+        "name": "Casey"
+      }
+    },
+    {
+      "eventDataId": "evt-fail",
+      "eventTimestamp": "2026-10-17T12:06:00Z",
+      "operationName": { "value": "Microsoft.Network/publicIPAddresses/write" },
+      "status": { "value": "Failed" },
+      "caller": "casey@contoso.com",
+      "resourceId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/publicIPAddresses/pip-fail",
+      "claims": { "idtyp": "user", "upn": "casey@contoso.com" }
+    },
+    {
+      "eventDataId": "evt-read",
+      "eventTimestamp": "2026-10-17T12:07:00Z",
+      "operationName": { "value": "Microsoft.Network/publicIPAddresses/read" },
+      "status": { "value": "Succeeded" },
+      "caller": "casey@contoso.com",
+      "resourceId": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/publicIPAddresses/pip1",
+      "claims": { "idtyp": "user", "upn": "casey@contoso.com" }
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "totalRecords": 2,
+  "count": 2,
+  "data": [
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Compute/snapshots/snap-old",
+      "name": "snap-old",
+      "location": "eastus",
+      "skuName": "Standard_LRS",
+      "sizeGB": 50,
+      "timeCreated": "2025-01-01T00:00:00Z",
+      "createdBy": "agent-sp"
+    },
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Compute/snapshots/snap-recent",
+      "name": "snap-recent",
+      "location": "eastus",
+      "skuName": "Standard_LRS",
+      "sizeGB": 20,
+      "timeCreated": "2026-10-10T00:00:00Z",
+      "createdBy": "human@contoso.com"
+    }
+  ]
+}

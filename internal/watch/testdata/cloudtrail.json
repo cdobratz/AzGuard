@@ -1,0 +1,47 @@
+{
+  "Events": [
+    {
+      "EventId": "evt-eip",
+      "EventName": "AllocateAddress",
+      "EventTime": "2026-10-17T15:00:00Z",
+      "Username": "ci-bot",
+      "Resources": [{ "ResourceType": "AWS::EC2::EIP", "ResourceName": "eipalloc-1" }],
+      "CloudTrailEvent": "{\"eventName\":\"AllocateAddress\",\"awsRegion\":\"us-east-1\",\"userIdentity\":{\"type\":\"IAMUser\",\"arn\":\"arn:aws:iam::123456789012:user/ci-bot\",\"accessKeyId\":\"AKIAEXAMPLE\",\"userName\":\"ci-bot\"},\"requestParameters\":{},\"responseElements\":{\"allocationId\":\"eipalloc-1\",\"publicIp\":\"203.0.113.10\"}}"
+    },
+    {
+      "EventId": "evt-nat",
+      "EventName": "CreateNatGateway",
+      "EventTime": "2026-10-17T15:01:00Z",
+      "Username": "ci-bot",
+      "CloudTrailEvent": "{\"eventName\":\"CreateNatGateway\",\"awsRegion\":\"us-east-1\",\"userIdentity\":{\"type\":\"IAMUser\",\"arn\":\"arn:aws:iam::123456789012:user/ci-bot\",\"accessKeyId\":\"AKIAEXAMPLE\",\"userName\":\"ci-bot\"},\"responseElements\":{\"natGateway\":{\"natGatewayId\":\"nat-1\"}}}"
+    },
+    {
+      "EventId": "evt-sso",
+      "EventName": "RunInstances",
+      "EventTime": "2026-10-17T15:02:00Z",
+      "Username": "casey",
+      "CloudTrailEvent": "{\"eventName\":\"RunInstances\",\"awsRegion\":\"us-east-1\",\"userIdentity\":{\"type\":\"AssumedRole\",\"arn\":\"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_Admin_abc/casey\",\"userName\":\"casey\"},\"requestParameters\":{\"instancesSet\":{\"items\":[{\"instanceType\":\"t3.micro\",\"minCount\":1,\"maxCount\":1}]}},\"responseElements\":{\"instancesSet\":{\"items\":[{\"instanceId\":\"i-1\"}]}}}"
+    },
+    {
+      "EventId": "evt-gw",
+      "EventName": "CreateVpcEndpoint",
+      "EventTime": "2026-10-17T15:03:00Z",
+      "Username": "casey",
+      "CloudTrailEvent": "{\"eventName\":\"CreateVpcEndpoint\",\"awsRegion\":\"us-east-1\",\"userIdentity\":{\"type\":\"AssumedRole\",\"arn\":\"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_Admin_abc/casey\",\"userName\":\"casey\"},\"requestParameters\":{\"vpcEndpointType\":\"Gateway\"},\"responseElements\":{\"vpcEndpoint\":{\"vpcEndpointId\":\"vpce-gw\"}}}"
+    },
+    {
+      "EventId": "evt-describe",
+      "EventName": "DescribeInstances",
+      "EventTime": "2026-10-17T15:04:00Z",
+      "Username": "casey",
+      "CloudTrailEvent": "{\"eventName\":\"DescribeInstances\",\"awsRegion\":\"us-east-1\",\"userIdentity\":{\"type\":\"AssumedRole\",\"arn\":\"arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_Admin_abc/casey\",\"userName\":\"casey\"}}"
+    },
+    {
+      "EventId": "evt-denied",
+      "EventName": "RunInstances",
+      "EventTime": "2026-10-17T15:05:00Z",
+      "Username": "ci-bot",
+      "CloudTrailEvent": "{\"eventName\":\"RunInstances\",\"awsRegion\":\"us-east-1\",\"errorCode\":\"Client.UnauthorizedOperation\",\"userIdentity\":{\"type\":\"IAMUser\",\"accessKeyId\":\"AKIAEXAMPLE\",\"userName\":\"ci-bot\"},\"requestParameters\":{\"instanceType\":\"t3.micro\"}}"
+    }
+  ]
+}
