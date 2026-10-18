@@ -1,0 +1,10 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "CDK synth fixture",
+  "Resources": {
+    "Nat": { "Type": "AWS::EC2::NatGateway", "Properties": { "SubnetId": "subnet-1" } },
+    "Web": { "Type": "AWS::EC2::Instance", "Properties": { "InstanceType": "t3.micro" } },
+    "Gw": { "Type": "AWS::EC2::VPCEndpoint", "Properties": { "VpcEndpointType": "Gateway" } },
+    "Role": { "Type": "AWS::IAM::Role", "Properties": {} }
+  }
+}

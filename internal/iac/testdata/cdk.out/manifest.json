@@ -1,0 +1,10 @@
+{
+  "version": "36.0.0",
+  "artifacts": {
+    "Tree": { "type": "cdk:tree" },
+    "AppStack": {
+      "type": "aws:cloudformation:stack",
+      "properties": { "templateFile": "AppStack.template.json" }
+    }
+  }
+}

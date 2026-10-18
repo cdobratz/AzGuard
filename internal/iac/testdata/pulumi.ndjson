@@ -1,0 +1,4 @@
+{"sequence":1,"op":"same","urn":"urn:pulumi:dev::app::aws:ec2/instance:Instance::old","type":"aws:ec2/instance:Instance"}
+{"sequence":2,"op":"create","urn":"urn:pulumi:dev::app::aws:ec2/natGateway:NatGateway::nat","type":"aws:ec2/natGateway:NatGateway","newState":{"inputs":{}}}
+{"sequence":3,"op":"create","urn":"urn:pulumi:dev::app::azure:network/publicIp:PublicIp::pip","type":"azure:network/publicIp:PublicIp","newState":{"inputs":{"sku":"Standard"}}}
+{"sequence":4,"op":"delete","urn":"urn:pulumi:dev::app::aws:ec2/eip:Eip::gone","type":"aws:ec2/eip:Eip"}
