@@ -1,0 +1,22 @@
+{
+  "totalRecords": 2,
+  "count": 2,
+  "data": [
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/natGateways/nat-idle",
+      "name": "nat-idle",
+      "location": "eastus",
+      "skuName": "Standard",
+      "subnetCount": 0,
+      "createdBy": "agent-sp"
+    },
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/natGateways/nat-used",
+      "name": "nat-used",
+      "location": "eastus",
+      "skuName": "Standard",
+      "subnetCount": 2,
+      "createdBy": "human@contoso.com"
+    }
+  ]
+}

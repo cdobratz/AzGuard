@@ -1,0 +1,6 @@
+{
+  "PriceList": [
+    "{\"product\":{\"attributes\":{\"usagetype\":\"EBS:VolumeUsage.gp2\",\"volumeType\":\"General Purpose\",\"location\":\"US East (N. Virginia)\"}},\"terms\":{\"OnDemand\":{\"GP2\":{\"priceDimensions\":{\"GP2.DIM\":{\"unit\":\"GB-Mo\",\"description\":\"$0.10 per GB-month of General Purpose (gp2) provisioned storage\",\"pricePerUnit\":{\"USD\":\"0.1000000000\"}}}}}}}",
+    "{\"product\":{\"attributes\":{\"usagetype\":\"EBS:VolumeUsage.gp3\",\"volumeType\":\"General Purpose\",\"location\":\"US East (N. Virginia)\"}},\"terms\":{\"OnDemand\":{\"GP3\":{\"priceDimensions\":{\"GP3.DIM\":{\"unit\":\"GB-Mo\",\"description\":\"$0.08 per GB-month of General Purpose (gp3) provisioned storage\",\"pricePerUnit\":{\"USD\":\"0.0800000000\"}}}}}}}"
+  ]
+}

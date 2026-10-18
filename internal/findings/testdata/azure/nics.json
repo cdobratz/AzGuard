@@ -1,0 +1,28 @@
+{
+  "totalRecords": 3,
+  "count": 3,
+  "data": [
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/networkInterfaces/nic-orphan",
+      "name": "nic-orphan",
+      "location": "eastus",
+      "hasPrivateEndpoint": false,
+      "createdBy": "agent-sp"
+    },
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/networkInterfaces/nic-vm",
+      "name": "nic-vm",
+      "location": "eastus",
+      "virtualMachine": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm1",
+      "hasPrivateEndpoint": false,
+      "createdBy": "human@contoso.com"
+    },
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/networkInterfaces/nic-pe",
+      "name": "nic-pe",
+      "location": "eastus",
+      "hasPrivateEndpoint": true,
+      "createdBy": "agent-sp"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "BillingCurrency": "USD",
+  "CustomerEntityId": "Default",
+  "CustomerEntityType": "Retail",
+  "Items": [
+    {
+      "currencyCode": "USD",
+      "tierMinimumUnits": 0,
+      "retailPrice": 4.00,
+      "unitPrice": 4.00,
+      "armRegionName": "eastus",
+      "location": "US East",
+      "meterName": "S10 LRS Disk",
+      "productName": "Standard HDD Managed Disks",
+      "skuName": "S10 LRS",
+      "serviceName": "Storage",
+      "unitOfMeasure": "1/Month",
+      "type": "Reservation",
+      "priceType": "Reservation"
+    },
+    {
+      "currencyCode": "USD",
+      "tierMinimumUnits": 0,
+      "retailPrice": 5.89,
+      "unitPrice": 5.89,
+      "armRegionName": "eastus",
+      "location": "US East",
+      "meterName": "S10 LRS Disk",
+      "productName": "Standard HDD Managed Disks",
+      "skuName": "S10 LRS",
+      "serviceName": "Storage",
+      "unitOfMeasure": "1/Month",
+      "type": "Consumption",
+      "priceType": "Consumption"
+    }
+  ]
+}

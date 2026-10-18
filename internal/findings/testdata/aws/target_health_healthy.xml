@@ -1,0 +1,10 @@
+<DescribeTargetHealthResponse xmlns="http://elasticloadbalancing.amazonaws.com/doc/2015-12-01/">
+  <DescribeTargetHealthResult>
+    <TargetHealthDescriptions>
+      <member>
+        <Target><Id>i-c</Id><Port>80</Port></Target>
+        <TargetHealth><State>healthy</State></TargetHealth>
+      </member>
+    </TargetHealthDescriptions>
+  </DescribeTargetHealthResult>
+</DescribeTargetHealthResponse>

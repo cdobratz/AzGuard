@@ -1,0 +1,6 @@
+{
+  "PriceList": [
+    "{\"product\":{\"attributes\":{\"usagetype\":\"PublicIPv4:IdleAddress\",\"group\":\"VPCPublicIPv4\",\"location\":\"US East (N. Virginia)\"}},\"terms\":{\"OnDemand\":{\"IP1\":{\"priceDimensions\":{\"IP1.DIM\":{\"unit\":\"Hrs\",\"description\":\"$0.005 per Idle public IPv4 address per hour\",\"pricePerUnit\":{\"USD\":\"0.0050000000\"}}}}}}}",
+    "{\"product\":{\"attributes\":{\"usagetype\":\"PublicIPv4:InUseAddress\",\"group\":\"VPCPublicIPv4\",\"location\":\"US East (N. Virginia)\"}},\"terms\":{\"OnDemand\":{\"IP2\":{\"priceDimensions\":{\"IP2.DIM\":{\"unit\":\"Hrs\",\"description\":\"$0.005 per In-use public IPv4 address per hour\",\"pricePerUnit\":{\"USD\":\"0.0050000000\"}}}}}}}"
+  ]
+}

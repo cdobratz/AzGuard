@@ -1,0 +1,21 @@
+{
+  "totalRecords": 2,
+  "count": 2,
+  "data": [
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/publicIPAddresses/pip-idle",
+      "name": "pip-idle",
+      "location": "eastus",
+      "skuName": "Standard",
+      "createdBy": "11111111-2222-3333-4444-555555555555"
+    },
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/publicIPAddresses/pip-used",
+      "name": "pip-used",
+      "location": "eastus",
+      "skuName": "Standard",
+      "ipConfiguration": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/networkInterfaces/nic/ipConfigurations/ip",
+      "createdBy": "human@contoso.com"
+    }
+  ]
+}

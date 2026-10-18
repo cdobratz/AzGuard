@@ -1,0 +1,6 @@
+{
+  "PriceList": [
+    "{\"product\":{\"attributes\":{\"usagetype\":\"NatGateway-Bytes\",\"group\":\"NGW\",\"location\":\"US East (N. Virginia)\"}},\"terms\":{\"OnDemand\":{\"NGWBYTES\":{\"priceDimensions\":{\"NGWBYTES.DIM\":{\"unit\":\"GB\",\"description\":\"$0.045 per GB data processed by NAT Gateways\",\"pricePerUnit\":{\"USD\":\"0.0450000000\"}}}}}}}",
+    "{\"product\":{\"attributes\":{\"usagetype\":\"NatGateway-Hours\",\"group\":\"NGW\",\"location\":\"US East (N. Virginia)\"}},\"terms\":{\"OnDemand\":{\"NGWHOURS\":{\"priceDimensions\":{\"NGWHOURS.DIM\":{\"unit\":\"Hrs\",\"description\":\"$0.045 per NAT Gateway Hour\",\"pricePerUnit\":{\"USD\":\"0.0450000000\"}}}}}}}"
+  ]
+}

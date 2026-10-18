@@ -1,0 +1,30 @@
+{
+  "totalRecords": 3,
+  "count": 3,
+  "data": [
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Web/serverfarms/plan-empty-b1",
+      "name": "plan-empty-b1",
+      "location": "eastus",
+      "skuName": "B1",
+      "numberOfSites": 0,
+      "createdBy": "agent-sp"
+    },
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Web/serverfarms/plan-empty-free",
+      "name": "plan-empty-free",
+      "location": "eastus",
+      "skuName": "F1",
+      "numberOfSites": 0,
+      "createdBy": "human@contoso.com"
+    },
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Web/serverfarms/plan-used",
+      "name": "plan-used",
+      "location": "eastus",
+      "skuName": "S1",
+      "numberOfSites": 2,
+      "createdBy": "human@contoso.com"
+    }
+  ]
+}

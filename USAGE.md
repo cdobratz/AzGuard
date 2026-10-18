@@ -148,8 +148,17 @@ azguard cost forecast
 ### Resources
 
 ```bash
-# Check running resources
+# Find idle and orphaned resources (read-only; exit 2 above --fail-over)
 azguard resources
+azguard resources --output json --fail-over 25
+
+# Poll Activity Log and CloudTrail (default every 15m; not a live stream)
+azguard watch --once
+azguard watch --webhook "$AZGUARD_WEBHOOK"
+
+# Block a billable command when the session budget is exceeded (exit 2)
+azguard guard --budget 25 -- aws ec2 run-instances --instance-type t3.micro
+azguard guard report --fixture activity.json
 
 # Cleanup guide
 azguard cleanup

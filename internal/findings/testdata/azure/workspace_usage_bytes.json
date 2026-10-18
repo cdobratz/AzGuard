@@ -1,0 +1,10 @@
+{
+  "value": [
+    {
+      "name": {"value": "DataIngestion", "localizedValue": "Data Ingestion"},
+      "unit": "Bytes",
+      "currentValue": 5368709120,
+      "limit": 0
+    }
+  ]
+}

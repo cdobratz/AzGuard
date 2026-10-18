@@ -1,0 +1,30 @@
+{
+  "totalRecords": 3,
+  "count": 3,
+  "data": [
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-stopped",
+      "name": "vm-stopped",
+      "location": "eastus",
+      "powerState": "PowerState/stopped",
+      "vmSize": "Standard_B1s",
+      "createdBy": "agent-sp"
+    },
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-deallocated",
+      "name": "vm-deallocated",
+      "location": "eastus",
+      "powerState": "PowerState/deallocated",
+      "vmSize": "Standard_B1s",
+      "createdBy": "human@contoso.com"
+    },
+    {
+      "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-running",
+      "name": "vm-running",
+      "location": "eastus",
+      "powerState": "PowerState/running",
+      "vmSize": "Standard_B1s",
+      "createdBy": "human@contoso.com"
+    }
+  ]
+}
