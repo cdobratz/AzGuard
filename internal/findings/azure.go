@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/azguard/azguard/internal/pricing"
+	"github.com/cdobratz/azguard/internal/pricing"
 )
 
 // EvalAzureDisks flags managed disks whose diskState is Unattached.

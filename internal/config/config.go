@@ -5,27 +5,16 @@ import (
 	"os"
 	"strings"
 
-	"github.com/azguard/azguard/internal/cloud/azure"
+	"github.com/cdobratz/azguard/internal/cloud/azure"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	Ollama    OllamaConfig    `mapstructure:"ollama"`
-	Anthropic AnthropicConfig  `mapstructure:"anthropic"`
-	Azure     AzureConfig     `mapstructure:"azure"`
-	AWS       AWSConfig       `mapstructure:"aws"`
-	GCP       GCPConfig       `mapstructure:"gcp"`
-	Storage   StorageConfig   `mapstructure:"storage"`
-}
-
-type OllamaConfig struct {
-	BaseURL string `mapstructure:"base_url"`
-	Model   string `mapstructure:"model"`
-}
-
-type AnthropicConfig struct {
-	APIKey string `mapstructure:"api_key"`
-	Model  string `mapstructure:"model"`
+	Azure   AzureConfig   `mapstructure:"azure"`
+	AWS     AWSConfig     `mapstructure:"aws"`
+	GCP     GCPConfig     `mapstructure:"gcp"`
+	Storage StorageConfig `mapstructure:"storage"`
+	Account AccountConfig `mapstructure:"account"`
 }
 
 type AzureConfig struct {
@@ -51,37 +40,30 @@ type StorageConfig struct {
 	Path string `mapstructure:"path"`
 }
 
+// AccountConfig is the answer from `azguard init`. These fields are not secrets.
+type AccountConfig struct {
+	Azure                string `mapstructure:"azure"`
+	AWS                  string `mapstructure:"aws"`
+	AWSSpendLimit        string `mapstructure:"aws_spend_limit"`
+	AzureCreditRemaining string `mapstructure:"azure_credit_remaining"`
+	AzureCreditExpires   string `mapstructure:"azure_credit_expires"`
+	AWSCreditRemaining   string `mapstructure:"aws_credit_remaining"`
+	AWSCreditExpires     string `mapstructure:"aws_credit_expires"`
+}
+
 var cfg *Config
 
 func Load(configPath string) (*Config, error) {
 	home, _ := os.UserHomeDir()
-	
+
 	viper.SetConfigType("yaml")
 	viper.SetConfigName("config")
 	viper.AddConfigPath(home + "/.azguard")
 	viper.AddConfigPath(".")
 	viper.AddConfigPath(configPath)
 
-	viper.SetDefault("ollama.base_url", "http://localhost:11434")
-	viper.SetDefault("ollama.model", "codellama")
-	viper.SetDefault("anthropic.model", "claude-3-sonnet-20240229")
 	viper.SetDefault("azure.auth_method", "cli")
 	viper.SetDefault("storage.path", "~/.azguard/data.db")
-
-	envFile := os.Getenv("AGENT_ENV_FILE")
-	if envFile != "" {
-		viper.SetConfigFile(envFile)
-		if err := viper.ReadInConfig(); err != nil {
-			return nil, fmt.Errorf("failed to read env file: %w", err)
-		}
-	}
-
-	if err := viper.BindEnv("anthropic.api_key", "ANTHROPIC_API_KEY"); err != nil {
-		return nil, err
-	}
-	if err := viper.BindEnv("azure.client_secret", "AZURE_CLIENT_SECRET"); err != nil {
-		return nil, err
-	}
 
 	if err := viper.ReadInConfig(); err != nil {
 		_, ok := err.(viper.ConfigFileNotFoundError)
@@ -95,7 +77,9 @@ func Load(configPath string) (*Config, error) {
 	}
 
 	cfg.Storage.Path = expandHome(cfg.Storage.Path)
-	cfg.Ollama.BaseURL = expandHome(cfg.Ollama.BaseURL)
+	if err := applySecrets(viper.ConfigFileUsed(), cfg, defaultStore); err != nil {
+		return nil, err
+	}
 
 	// Auto-detect subscription ID from Azure CLI if not set or invalid
 	if cfg.Azure.SubscriptionID == "" {

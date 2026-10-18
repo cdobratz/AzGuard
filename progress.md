@@ -76,7 +76,7 @@ azguard cleanup          Cleanup guide
 
 ```
 azguard/
-├── cmd/agent/main.go       # CLI entry
+├── cmd/azguard/main.go     # CLI entry
 ├── internal/
 │   ├── config/             # Configuration
 │   ├── storage/            # SQLite

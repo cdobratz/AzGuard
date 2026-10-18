@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	awscloud "github.com/azguard/azguard/internal/cloud/aws"
-	"github.com/azguard/azguard/internal/cost"
-	"github.com/azguard/azguard/internal/storage"
+	"github.com/cdobratz/azguard/internal/account"
+	awscloud "github.com/cdobratz/azguard/internal/cloud/aws"
+	"github.com/cdobratz/azguard/internal/cost"
+	"github.com/cdobratz/azguard/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -63,8 +64,10 @@ func awsStatusCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
-			fmt.Println("\n🛡️  AWS Free Tier Status")
+			fmt.Println("\n🛡️  AWS account")
 			fmt.Println("═══════════════════════════════")
+			fmt.Print(account.DescribeAWS(awsProfile()))
+			fmt.Println()
 
 			if !awsCostClient.IsConfigured() {
 				return fmt.Errorf("AWS credentials not configured")

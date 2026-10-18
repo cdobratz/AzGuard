@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	awscloud "github.com/azguard/azguard/internal/cloud/aws"
-	"github.com/azguard/azguard/internal/cloud/azure"
-	"github.com/azguard/azguard/internal/findings"
-	"github.com/azguard/azguard/internal/inventory"
-	"github.com/azguard/azguard/internal/pricing"
+	awscloud "github.com/cdobratz/azguard/internal/cloud/aws"
+	"github.com/cdobratz/azguard/internal/cloud/azure"
+	"github.com/cdobratz/azguard/internal/findings"
+	"github.com/cdobratz/azguard/internal/inventory"
+	"github.com/cdobratz/azguard/internal/pricing"
 	"github.com/spf13/cobra"
 )
 

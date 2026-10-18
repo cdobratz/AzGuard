@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/azguard/azguard/internal/pricing"
+	"github.com/cdobratz/azguard/internal/pricing"
 )
 
 // Classification is the cost guess for one shell command.

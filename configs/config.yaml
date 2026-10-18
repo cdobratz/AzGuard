@@ -1,26 +1,22 @@
-ollama:
-  base_url: http://localhost:11434
-  model: codellama
-
-anthropic:
-  api_key: ""
-  model: claude-3-sonnet-20240229
-
 azure:
   auth_method: cli
   subscription_id: ""
   tenant_id: ""
   client_id: ""
-  client_secret: ""
+  # client_secret is not stored here. Use AZURE_CLIENT_SECRET or the OS keychain.
 
 aws:
-  access_key: ""
-  secret_key: ""
-  session_token: ""
   region: us-east-1
+  # access_key, secret_key, and session_token are not stored here.
+  # Use AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, or the OS keychain.
 
 gcp:
   project_id: ""
 
 storage:
-  path: ~/.agent/data.db
+  path: ~/.azguard/data.db
+
+# azguard init writes this section. It is not a secret.
+account:
+  azure: ""
+  aws: ""

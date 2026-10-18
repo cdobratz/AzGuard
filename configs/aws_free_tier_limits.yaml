@@ -1,3 +1,7 @@
+# AWS Free plan vs Paid plan: accounts opened on or after 2025-07-15 start on the
+# Free plan (credits, no charge unless you upgrade). A Paid plan can be charged.
+# https://aws.amazon.com/free/
+
 # AWS Free Tier Limits
 # These are the limits for AWS's free tier
 # Used by azguard to detect potential overages
@@ -7,6 +11,8 @@ services:
   # EC2 - Elastic Compute Cloud
   ec2:
     description: "Linux t2.micro or t3.micro instance"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
     limit: 750
     unit: "hours/month"
     duration: "12 months"
@@ -15,6 +21,8 @@ services:
   # S3 - Simple Storage Service
   s3:
     description: "Standard storage"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
     limit: 5
     unit: "GB"
     duration: "12 months"
@@ -26,6 +34,8 @@ services:
   # Lambda
   lambda:
     description: "AWS Lambda requests"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
     limit: 1000000
     unit: "requests/month"
     duration: "always free"
@@ -35,6 +45,8 @@ services:
   # RDS - Relational Database Service
   rds:
     description: "db.t2.micro or db.t3.micro Single-AZ"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
     limit: 750
     unit: "hours/month"
     duration: "12 months"
@@ -44,6 +56,8 @@ services:
   # DynamoDB
   dynamodb:
     description: "DynamoDB storage and throughput"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
     limit: 25
     unit: "GB"
     duration: "always free"
@@ -54,6 +68,8 @@ services:
   # CloudFront
   cloudfront:
     description: "Data transfer out"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
     limit: 1
     unit: "TB/month"
     duration: "always free"
@@ -63,6 +79,8 @@ services:
   # SNS - Simple Notification Service
   sns:
     description: "SNS publishes"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
     limit: 1000000
     unit: "publishes/month"
     duration: "always free"
@@ -71,6 +89,8 @@ services:
   # SQS - Simple Queue Service
   sqs:
     description: "SQS requests"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
     limit: 1000000
     unit: "requests/month"
     duration: "always free"
@@ -79,6 +99,8 @@ services:
   # CloudWatch
   cloudwatch:
     description: "CloudWatch metrics and alarms"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
     limit: 10
     unit: "custom metrics"
     duration: "always free"
@@ -89,6 +111,8 @@ services:
   # API Gateway
   api_gateway:
     description: "REST API calls"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
     limit: 1000000
     unit: "calls/month"
     duration: "12 months"
@@ -97,6 +121,8 @@ services:
   # Cognito
   cognito:
     description: "Monthly active users"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
     limit: 50000
     unit: "MAUs"
     duration: "always free"
@@ -105,6 +131,8 @@ services:
   # EBS - Elastic Block Store
   ebs:
     description: "General Purpose SSD storage"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
     limit: 30
     unit: "GB/month"
     duration: "12 months"
@@ -113,6 +141,8 @@ services:
   # Elastic Load Balancing
   elb:
     description: "Application Load Balancer"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
     limit: 750
     unit: "hours/month"
     duration: "12 months"
@@ -124,12 +154,20 @@ budgets:
   tiny:
     amount: 1
     description: "Strict budget - great for free tier testing"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
   small:
     amount: 5
     description: "Small budget for light usage"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
   medium:
     amount: 10
     description: "Medium budget for moderate usage"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"
   moderate:
     amount: 20
     description: "Higher budget with warning before limit"
+    source_url: "https://aws.amazon.com/free/"
+    verified_on: "2026-10-18"

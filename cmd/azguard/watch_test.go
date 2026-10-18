@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/azguard/azguard/internal/watch"
+	"github.com/cdobratz/azguard/internal/watch"
 )
 
 func TestWatchCommandDefaults(t *testing.T) {

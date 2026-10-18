@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	awscloud "github.com/azguard/azguard/internal/cloud/aws"
-	"github.com/azguard/azguard/internal/findings"
-	"github.com/azguard/azguard/internal/pricing"
+	awscloud "github.com/cdobratz/azguard/internal/cloud/aws"
+	"github.com/cdobratz/azguard/internal/findings"
+	"github.com/cdobratz/azguard/internal/pricing"
 )
 
 // enrichPrices overlays Azure Retail Prices and AWS Price List responses onto book.

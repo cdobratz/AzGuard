@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/azguard/azguard/internal/iac"
-	"github.com/azguard/azguard/internal/pricing"
+	"github.com/cdobratz/azguard/internal/iac"
+	"github.com/cdobratz/azguard/internal/pricing"
 )
 
 // Options controls one guard decision.

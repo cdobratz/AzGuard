@@ -6,8 +6,8 @@ import (
 	"math"
 	"time"
 
-	"github.com/azguard/azguard/internal/cloud/azure"
-	"github.com/azguard/azguard/internal/storage"
+	"github.com/cdobratz/azguard/internal/cloud/azure"
+	"github.com/cdobratz/azguard/internal/storage"
 )
 
 type Service struct {

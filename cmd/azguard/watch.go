@@ -9,11 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	awscloud "github.com/azguard/azguard/internal/cloud/aws"
-	"github.com/azguard/azguard/internal/cloud/azure"
-	"github.com/azguard/azguard/internal/events"
-	"github.com/azguard/azguard/internal/pricing"
-	"github.com/azguard/azguard/internal/watch"
+	awscloud "github.com/cdobratz/azguard/internal/cloud/aws"
+	"github.com/cdobratz/azguard/internal/cloud/azure"
+	"github.com/cdobratz/azguard/internal/events"
+	"github.com/cdobratz/azguard/internal/pricing"
+	"github.com/cdobratz/azguard/internal/watch"
 	"github.com/spf13/cobra"
 )
 

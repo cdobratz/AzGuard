@@ -29,7 +29,7 @@ project_name: agent
 builds:
   - id: agent-cli
     binary: agent
-    main: ./cmd/agent/main.go
+    main: ./cmd/azguard/main.go
     env:
       - CGO_ENABLED=0
     goos:
@@ -261,7 +261,7 @@ brew install agent
 | File | Purpose |
 |------|---------|
 | `internal/cloud/aws/cost_client.go` | AWS Cost Explorer & Free Tier API client with SigV4 signing |
-| `cmd/agent/aws.go` | AWS subcommand group (status, scan, alerts, resources, cost) |
+| `cmd/azguard/aws.go` | AWS subcommand group (status, scan, alerts, resources, cost) |
 | `configs/aws_free_tier_limits.yaml` | AWS free tier service limits (EC2, S3, Lambda, RDS, etc.) |
 
 ### Commands Added

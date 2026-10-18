@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	awscloud "github.com/azguard/azguard/internal/cloud/aws"
-	"github.com/azguard/azguard/internal/inventory"
-	"github.com/azguard/azguard/internal/pricing"
+	awscloud "github.com/cdobratz/azguard/internal/cloud/aws"
+	"github.com/cdobratz/azguard/internal/inventory"
+	"github.com/cdobratz/azguard/internal/pricing"
 )
 
 func TestAWSRulesFromFixtures(t *testing.T) {

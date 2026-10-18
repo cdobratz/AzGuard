@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/azguard/azguard/internal/pricing"
+	"github.com/cdobratz/azguard/internal/pricing"
 )
 
 type pulumiStep struct {

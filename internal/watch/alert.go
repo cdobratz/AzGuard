@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/azguard/azguard/internal/events"
-	"github.com/azguard/azguard/internal/pricing"
+	"github.com/cdobratz/azguard/internal/events"
+	"github.com/cdobratz/azguard/internal/pricing"
 )
 
 // Alert is one new billable resource reported by `azguard watch`.
