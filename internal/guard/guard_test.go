@@ -81,6 +81,42 @@ func TestDecidePricesKnownCreates(t *testing.T) {
 	}
 }
 
+func TestDecidePlanPricesIaC(t *testing.T) {
+	tf := mustReadGuard(t, "../iac/testdata/terraform.json")
+	d, err := DecidePlan("terraform apply tfplan", 0, 10, tf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if d.Allow || !d.Priced || d.USD != 70.63 || !strings.Contains(d.Message, "session budget") {
+		t.Fatalf("terraform = %+v", d)
+	}
+	pulumi := mustReadGuard(t, "../iac/testdata/pulumi.ndjson")
+	d, err = DecidePlan("pulumi up", 0, 100, pulumi)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !d.Allow || d.USD != 36.50 {
+		t.Fatalf("pulumi = %+v", d)
+	}
+	cfn := mustReadGuard(t, "../iac/testdata/template.json")
+	d, err = DecidePlan("cdk deploy", 0, 1, cfn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if d.Allow || d.USD != 40.44 {
+		t.Fatalf("cdk = %+v", d)
+	}
+}
+
+func mustReadGuard(t *testing.T, path string) []byte {
+	t.Helper()
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return body
+}
+
 func TestRunCommandDoesNotExecWhenBlocked(t *testing.T) {
 	called := false
 	err := RunCommand([]string{"aws", "ec2", "run-instances"}, Options{
