@@ -152,6 +152,10 @@ azguard cost forecast
 azguard resources
 azguard resources --output json --fail-over 25
 
+# Poll Activity Log and CloudTrail (default every 15m; not a live stream)
+azguard watch --once
+azguard watch --webhook "$AZGUARD_WEBHOOK"
+
 # Cleanup guide
 azguard cleanup
 ```

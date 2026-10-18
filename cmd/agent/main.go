@@ -39,7 +39,7 @@ Examples:
   azguard scan              Scan for free tier overages
   azguard resources        Find idle and orphaned resources
   azguard budget add 5     Add a $5 budget alert
-  azguard watch            Monitor costs daily`,
+  azguard watch            Poll for new billable resources`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			cfg, err = config.Load("")
@@ -253,24 +253,6 @@ Shows which services are approaching or exceeding their free allocations.`,
 				fmt.Println("\n⚠️  Some services may have overages. Run 'azguard resources' for details.")
 			}
 			fmt.Println()
-			return nil
-		},
-	}
-}
-
-func watchCmd() *cobra.Command {
-	var interval string
-	return &cobra.Command{
-		Use:   "watch",
-		Short: "Continuous monitoring with alerts",
-		Long:  `Monitor costs at regular intervals and alert when thresholds are reached.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("🛡️  azguard watch - Continuous Monitoring")
-			fmt.Println("═══════════════════════════════════════")
-			fmt.Println("This feature is coming soon!")
-			fmt.Println("For now, use 'azguard status' in a cron job:")
-			fmt.Println("  */30 * * * * azguard status")
-			_ = interval
 			return nil
 		},
 	}

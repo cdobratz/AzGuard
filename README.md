@@ -67,6 +67,7 @@ azguard cost fetch
 | `azguard status` | Quick overview of your Azure free tier status |
 | `azguard scan` | Scan for Azure free tier overages |
 | `azguard resources` | Find idle and orphaned resources, with a monthly cost estimate |
+| `azguard watch` | Poll for new billable resources and alert |
 | `azguard budget add [amount]` | Add a budget alert ($1-$100) |
 | `azguard budget list` | List all budget alerts |
 | `azguard cost current` | Show current month costs |
@@ -208,6 +209,46 @@ On AWS, attach **ReadOnlyAccess**, or only these actions:
 - `pricing:GetProducts`
 
 Do not grant delete, terminate, release, stop, or deallocate permissions for this command.
+
+## Watch for new billable resources
+
+`azguard watch` polls on an interval (default **15 minutes**) for resource creates. It is not a live stream and it does not promise real-time alerts.
+
+Provider delay, checked against the published service behavior and **not measured on a live subscription in CI** (tests use recorded fixtures):
+
+- Azure Activity Log management events usually show up within a few minutes. Microsoft does not publish a hard delivery SLA for that feed.
+- AWS CloudTrail `LookupEvents` usually returns an event within about 15 minutes of the API call, and it can take longer.
+
+An alert arrives after that delay, on the next poll. With the default interval, expect on the order of the provider delay plus up to 15 minutes.
+
+```bash
+azguard watch
+azguard watch --once
+azguard watch --interval 15m --webhook "$AZGUARD_WEBHOOK"
+azguard watch --webhook-schema
+azguard watch --desktop=false
+```
+
+Each new event prints the principal and an estimated monthly list price from the bundled table (730 hours per month), not an invoice. A service principal, an app-only Azure token, an IAM access key, or an assumed role that is not IAM Identity Center (`AWSReservedSSO`) is marked as automation. A user UPN and an `AWSReservedSSO` role are not.
+
+Seen event IDs are stored in `~/.azguard/watch.json` (mode 0600). A failed webhook is not marked seen, so the next poll retries it. A missing desktop notifier is logged and does not stop the poll.
+
+### Webhook body
+
+`--webhook` POSTs JSON that Slack reads from `text` and Discord reads from `content`. Both fields are the same message. `username` is `azguard`. `attachments` follows Slack's attachment shape (orange `#e67e22` when any principal is automation, blue `#3498db` otherwise). Discord ignores `attachments` and displays `content`. `azguard watch --webhook-schema` prints the shape.
+
+### Read-only permissions
+
+`watch` only reads logs. It does not call the price-list APIs.
+
+Azure, in addition to the Reader role used by `resources`:
+
+- `Microsoft.Insights/eventtypes/values/read` (Activity Log management events)
+
+AWS:
+
+- `cloudtrail:LookupEvents`
+- `ec2:DescribeRegions` only when you pass `--all-regions`
 
 ## How It Works
 
