@@ -26,11 +26,9 @@ azguard monitors your Azure and AWS usage against free tier limits and alerts yo
 ```bash
 # One-line install (recommended)
 curl -sSL https://azguard.dev/install.sh | bash
-
-# Or download from releases
-curl -L -o azguard https://github.com/cdobratz/azguard/releases/latest/download/azguard
-chmod +x azguard
 ```
+
+Or download the archive for your OS and architecture from the [latest release](https://github.com/cdobratz/AzGuard/releases/latest) (`azguard_<version>_<os>_<arch>.tar.gz` or `.zip`, plus `checksums.txt`). Verify the archive against `checksums.txt`, extract it, and put the `azguard` binary on your `PATH`.
 
 ### Configure
 
@@ -104,11 +102,6 @@ scoop install azguard
 ```bash
 # Homebrew (macOS/Linux)
 brew install cdobratz/azguard/azguard
-```
-
-```powershell
-# Chocolatey (Windows)
-choco install azguard
 ```
 
 ### Build from Source

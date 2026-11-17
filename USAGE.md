@@ -19,29 +19,19 @@ curl -sSL https://azguard.dev/install.sh | bash
 
 ### Manual Install
 
-```bash
-# Download latest release
-curl -L -o azguard https://github.com/cdobratz/azguard/releases/latest/download/azguard
-
-# Make executable
-chmod +x azguard
-
-# Add to PATH
-sudo mv azguard /usr/local/bin/
-```
+Download the archive for your OS and architecture from the [latest release](https://github.com/cdobratz/AzGuard/releases/latest) (`azguard_<version>_<os>_<arch>.tar.gz` or `.zip`, plus `checksums.txt`). Verify the archive against `checksums.txt`, extract it, and put the `azguard` binary on your `PATH`.
 
 ### Package Managers
 
 ```powershell
 # Scoop (Windows)
-scoop bucket add extras
+scoop bucket add azguard https://github.com/cdobratz/scoop-azguard
 scoop install azguard
+```
 
+```bash
 # Homebrew (macOS/Linux)
-brew install azguard
-
-# Chocolatey (Windows)
-choco install azguard
+brew install cdobratz/azguard/azguard
 ```
 
 ---
