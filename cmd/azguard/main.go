@@ -33,15 +33,19 @@ var (
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "azguard",
-		Short: "azguard - Protect against Azure and AWS free tier bill shock",
-		Long: `One command to make sure your Azure and AWS free tiers don't surprise you with a bill.
-		
+		Short: "Find and clean up forgotten Azure and AWS resources",
+		Long: `AzGuard finds forgotten and AI-agent-created resources on Azure and AWS.
+
+azguard cleanup is a dry run unless you pass --apply. A resource tagged azguard:keep=true is never deleted.
+
+Free-tier and credit tracking is second: azguard status and azguard scan. Credit amounts come from azguard init when you set them.
+
 Examples:
-  azguard scan              Scan for free tier overages
-  azguard resources        Find idle and orphaned resources
-  azguard cleanup          Show resources that would be deleted
-  azguard budget add 5     Add a $5 budget alert
-  azguard watch            Poll for new billable resources`,
+  azguard cleanup           Show resources that would be deleted
+  azguard cleanup --apply   Delete after you confirm
+  azguard resources         Find idle and orphaned resources
+  azguard status            Spend, account type, and stored credit
+  azguard scan              Compare usage with free-tier limits`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			cfg, err = config.Load("")

@@ -1,5 +1,11 @@
 # azguard Usage Guide
 
+azguard finds forgotten and AI-agent-created resources on Azure and AWS, then deletes only what you confirm. `azguard cleanup` is a dry run unless you pass `--apply`. A resource tagged `azguard:keep=true` is never deleted.
+
+Free-tier and credit tracking is the second part. `azguard status` and `azguard scan` show spend and account type. Credit remaining and expiry are the values stored by `azguard init` (`--azure-credit`, `--azure-credit-expires`, `--aws-credit`, `--aws-credit-expires`). A Pay-As-You-Go or Paid account is not shown as a percentage of a $200 free tier.
+
+The CLI is local. It does not host your account and it has no paid tier.
+
 ## Table of Contents
 
 1. [Installation](#installation)
@@ -96,6 +102,7 @@ azguard status
 Shows:
 - Azure account type (free with a spending limit, or Pay-As-You-Go)
 - Current spend
+- Credit remaining and expiry when `azguard init` stored them
 - Active budget alerts
 
 ### Scan for Overages

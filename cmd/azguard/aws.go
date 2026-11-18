@@ -16,15 +16,18 @@ var awsCostClient *awscloud.CostClient
 func awsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "aws",
-		Short: "AWS free tier monitoring and alerts",
-		Long: `Monitor your AWS free tier usage and get alerts before unexpected charges.
+		Short: "AWS cleanup context and free-tier checks",
+		Long: `AWS commands for the same CLI.
+
+azguard cleanup --cloud aws deletes idle and orphaned AWS resources. It is a dry run unless you pass --apply. A resource tagged azguard:keep=true is never deleted.
+
+azguard aws status and azguard aws scan are the free-tier view. A Paid plan is not shown as a percentage of a $200 free tier.
 
 Examples:
-  azguard aws status              Check AWS free tier usage
+  azguard cleanup --cloud aws     Show AWS resources that would be deleted
+  azguard aws status              Account plan and free-tier summary
   azguard aws scan                Scan services approaching limits
-  azguard aws alerts --threshold 80  Set alert threshold
-  azguard aws resources           List free tier eligible services
-  azguard aws cost                View AWS cost breakdown`,
+  azguard aws resources           List free tier eligible services`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// Run the root PersistentPreRunE first for config/db
 			if err := cmd.Root().PersistentPreRunE(cmd, args); err != nil {
@@ -333,7 +336,7 @@ func awsCostCmd() *cobra.Command {
 			}
 
 			if result.TotalCost == 0 {
-				fmt.Println("\n✅ No charges this month — still within free tier!")
+				fmt.Println("\n✅ No charges this month. Still within the free tier.")
 			}
 
 			fmt.Println()
