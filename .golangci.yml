@@ -1,0 +1,29 @@
+# v2 form of the previous default, which was no config file under golangci-lint v1.55.2.
+version: "2"
+linters:
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+    rules:
+      # Newer errcheck and staticcheck than v1.55.2. These two findings are not new code.
+      - linters:
+          - errcheck
+        text: fmt\.Sscanf
+      - linters:
+          - staticcheck
+        text: QF1003
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
