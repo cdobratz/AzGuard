@@ -364,5 +364,4 @@ MIT License - see [LICENSE](LICENSE).
 
 ## Support
 
-- [GitHub Issues](https://github.com/cdobratz/azguard/issues)
-- [GitHub Discussions](https://github.com/cdobratz/azguard/discussions)
+- [GitHub Issues](https://github.com/cdobratz/AzGuard/issues)
