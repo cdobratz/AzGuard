@@ -75,6 +75,39 @@ func rowBool(row map[string]any, key string) bool {
 	}
 }
 
+// rowTags reads a Resource Graph tags object.
+// The key is absent when the query did not project tags, and the result is nil.
+// A present null or empty object is an empty map (tags were loaded, and there are none).
+func rowTags(row map[string]any) map[string]string {
+	v, ok := row["tags"]
+	if !ok {
+		return nil
+	}
+	if v == nil {
+		return map[string]string{}
+	}
+	switch t := v.(type) {
+	case map[string]any:
+		out := make(map[string]string, len(t))
+		for k, val := range t {
+			if val == nil {
+				out[k] = ""
+				continue
+			}
+			out[k] = strings.TrimSpace(fmt.Sprint(val))
+		}
+		return out
+	case map[string]string:
+		out := make(map[string]string, len(t))
+		for k, val := range t {
+			out[k] = val
+		}
+		return out
+	default:
+		return nil
+	}
+}
+
 func rowTime(row map[string]any, keys ...string) time.Time {
 	raw := rowString(row, keys...)
 	if raw == "" {

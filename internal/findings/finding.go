@@ -72,6 +72,15 @@ type Finding struct {
 	// replace the bundled estimate. They are not part of the output schema.
 	PriceKey      string  `json:"-"`
 	PriceQuantity float64 `json:"-"`
+
+	// Tags are the resource tags from the same describe or Resource Graph response.
+	// A nil map means tags were not loaded. An empty map means the resource has no tags.
+	// Tags are not part of the resources JSON schema.
+	Tags map[string]string `json:"-"`
+
+	// CreatedAt is the provider create time when the discovery response included one.
+	// The zero time means the age is unknown. CreatedAt is not part of the resources JSON schema.
+	CreatedAt time.Time `json:"-"`
 }
 
 // Report is the documented JSON output of `azguard resources --output json`.
@@ -222,6 +231,20 @@ func makeFinding(f Finding) Finding {
 		f.Title = titleOf(f.RuleID)
 	}
 	f.EstimatedMonthlyUSD = pricing.RoundUSD(f.EstimatedMonthlyUSD)
+	return f
+}
+
+// withMeta attaches tags and a create time for azguard cleanup.
+// A nil tag map means the tags were not loaded. An empty map means there are no tags.
+func (f Finding) withMeta(tags map[string]string, created time.Time) Finding {
+	if tags != nil {
+		cp := make(map[string]string, len(tags))
+		for k, v := range tags {
+			cp[k] = v
+		}
+		f.Tags = cp
+	}
+	f.CreatedAt = created
 	return f
 }
 

@@ -37,7 +37,7 @@ func EvalAzureDisks(rows []map[string]any, book *pricing.Book) []Finding {
 			PriceSource:         src,
 			PriceKey:            key,
 			PriceQuantity:       1,
-		}))
+		}).withMeta(rowTags(row), rowTime(row, "createdAt", "timeCreated")))
 	}
 	return out
 }
@@ -74,7 +74,7 @@ func EvalAzurePublicIPs(rows []map[string]any, book *pricing.Book) []Finding {
 			PriceSource:         src,
 			PriceKey:            key,
 			PriceQuantity:       1,
-		}))
+		}).withMeta(rowTags(row), rowTime(row, "createdAt", "timeCreated")))
 	}
 	return out
 }
@@ -102,7 +102,7 @@ func EvalAzureNICs(rows []map[string]any, _ *pricing.Book) []Finding {
 			SafeToDelete:     true,
 			SafeToDeleteHint: "No VM or private endpoint is using this NIC. Deleting it does not remove a running service.",
 			PriceSource:      pricing.SourceUnpriced,
-		}))
+		}).withMeta(rowTags(row), rowTime(row, "createdAt", "timeCreated")))
 	}
 	return out
 }
@@ -138,7 +138,7 @@ func EvalAzureStoppedVMs(rows []map[string]any, book *pricing.Book) []Finding {
 			PriceSource:         src,
 			PriceKey:            key,
 			PriceQuantity:       1,
-		}))
+		}).withMeta(rowTags(row), rowTime(row, "createdAt", "timeCreated")))
 	}
 	return out
 }
@@ -175,7 +175,7 @@ func EvalAzurePlans(rows []map[string]any, book *pricing.Book) []Finding {
 			PriceSource:         src,
 			PriceKey:            key,
 			PriceQuantity:       1,
-		}))
+		}).withMeta(rowTags(row), rowTime(row, "createdAt", "timeCreated")))
 	}
 	return out
 }
@@ -211,7 +211,7 @@ func EvalAzureSnapshots(rows []map[string]any, book *pricing.Book, opts Options)
 			PriceSource:         src,
 			PriceKey:            pricing.KeyAzureSnapshotGB,
 			PriceQuantity:       size,
-		}))
+		}).withMeta(rowTags(row), created))
 	}
 	return out
 }
@@ -246,7 +246,7 @@ func EvalAzureNATGateways(rows []map[string]any, book *pricing.Book) []Finding {
 			PriceSource:         src,
 			PriceKey:            pricing.KeyAzureNATGateway,
 			PriceQuantity:       1,
-		}))
+		}).withMeta(rowTags(row), rowTime(row, "createdAt", "timeCreated")))
 	}
 	return out
 }
@@ -293,7 +293,7 @@ func EvalAzureWorkspaces(rows, solutionRows []map[string]any, ingestion map[stri
 			PriceSource:         src,
 			PriceKey:            pricing.KeyAzureLogAnalyticsGB,
 			PriceQuantity:       gb,
-		}))
+		}).withMeta(rowTags(row), rowTime(row, "createdAt", "timeCreated")))
 	}
 	return out
 }

@@ -22,6 +22,12 @@ func TestAWSRulesFromFixtures(t *testing.T) {
 		got := EvalAWSEBS(volumes, book)
 		f := one(t, got, "vol-free")
 		assertFinding(t, f, "aws.ebs.unattached", "us-east-1", 8.00, true, "ci-bot")
+		if f.Tags["CreatedBy"] != "ci-bot" || f.Tags["Name"] != "forgotten" {
+			t.Fatalf("tags = %+v", f.Tags)
+		}
+		if f.CreatedAt.IsZero() {
+			t.Fatal("volume create time was not kept for cleanup age checks")
+		}
 		absent(t, got, "vol-attached")
 		seen[f.RuleID] = true
 	})

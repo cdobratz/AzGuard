@@ -32,7 +32,7 @@ func EvalAWSEBS(volumes []inventory.Volume, book *pricing.Book) []Finding {
 			PriceSource:         src,
 			PriceKey:            key,
 			PriceQuantity:       v.SizeGB,
-		}))
+		}).withMeta(v.Tags, v.CreatedAt))
 	}
 	return out
 }
@@ -59,7 +59,7 @@ func EvalAWSEIP(addrs []inventory.Address, book *pricing.Book) []Finding {
 			PriceSource:         src,
 			PriceKey:            pricing.KeyAWSPublicIPv4,
 			PriceQuantity:       1,
-		}))
+		}).withMeta(a.Tags, a.CreatedAt))
 	}
 	return out
 }
@@ -106,7 +106,7 @@ func EvalAWSPublicIPv4(addrs []inventory.Address, enis []inventory.ENIPublic, bo
 			PriceSource:         src,
 			PriceKey:            pricing.KeyAWSPublicIPv4,
 			PriceQuantity:       1,
-		}))
+		}).withMeta(a.Tags, a.CreatedAt))
 	}
 	for _, e := range enis {
 		id := e.AllocationID
@@ -132,7 +132,7 @@ func EvalAWSPublicIPv4(addrs []inventory.Address, enis []inventory.ENIPublic, bo
 			PriceSource:         src,
 			PriceKey:            pricing.KeyAWSPublicIPv4,
 			PriceQuantity:       1,
-		}))
+		}).withMeta(e.Tags, time.Time{}))
 	}
 	return out
 }
@@ -171,7 +171,7 @@ func EvalAWSNAT(nats []inventory.NATGateway, book *pricing.Book, opts Options) [
 			PriceSource:         src,
 			PriceKey:            pricing.KeyAWSNATGateway,
 			PriceQuantity:       1,
-		}))
+		}).withMeta(n.Tags, n.CreatedAt))
 	}
 	return out
 }
@@ -205,7 +205,7 @@ func EvalAWSEndpoints(eps []inventory.VPCEndpoint, book *pricing.Book) []Finding
 			PriceSource:         src,
 			PriceKey:            pricing.KeyAWSVPCEndpointHour,
 			PriceQuantity:       float64(az),
-		}))
+		}).withMeta(e.Tags, e.CreatedAt))
 	}
 	return out
 }
@@ -249,7 +249,7 @@ func EvalAWSStopped(instances []inventory.Instance, book *pricing.Book) []Findin
 			SafeToDelete:        false,
 			SafeToDeleteHint:    "Deleting the instance can delete volumes whose DeleteOnTermination flag is set. Detach or snapshot volumes you need first.",
 			PriceSource:         src,
-		}))
+		}).withMeta(inst.Tags, inst.CreatedAt))
 	}
 	return out
 }
@@ -284,7 +284,7 @@ func EvalAWSELB(lbs []inventory.LoadBalancer, book *pricing.Book) []Finding {
 			PriceSource:         src,
 			PriceKey:            key,
 			PriceQuantity:       1,
-		}))
+		}).withMeta(lb.Tags, lb.CreatedAt))
 	}
 	return out
 }
@@ -313,7 +313,7 @@ func EvalAWSSnapshots(snaps []inventory.Snapshot, book *pricing.Book, opts Optio
 			PriceSource:         src,
 			PriceKey:            pricing.KeyAWSSnapshotGB,
 			PriceQuantity:       s.SizeGB,
-		}))
+		}).withMeta(s.Tags, s.CreatedAt))
 	}
 	return out
 }

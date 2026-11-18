@@ -23,6 +23,11 @@ type Reader struct {
 	Region    string
 	HTTP      *http.Client
 	Now       func() time.Time
+
+	// EC2Endpoint and ELBEndpoint override the regional AWS hosts. Tests set them.
+	// Empty uses https://ec2.{region}.amazonaws.com/ and the ELBv2 host.
+	EC2Endpoint string
+	ELBEndpoint string
 }
 
 // ReaderFromCost reuses credentials already resolved for the cost client.
@@ -49,6 +54,20 @@ func ReaderFromCost(c *CostClient) *Reader {
 // Enabled reports whether signing credentials are present.
 func (r *Reader) Enabled() bool {
 	return r != nil && r.AccessKey != "" && r.SecretKey != ""
+}
+
+func (r *Reader) ec2Endpoint(region string) string {
+	if r != nil && r.EC2Endpoint != "" {
+		return r.EC2Endpoint
+	}
+	return "https://ec2." + region + ".amazonaws.com/"
+}
+
+func (r *Reader) elbEndpoint(region string) string {
+	if r != nil && r.ELBEndpoint != "" {
+		return r.ELBEndpoint
+	}
+	return "https://elasticloadbalancing." + region + ".amazonaws.com/"
 }
 
 func (r *Reader) now() time.Time {

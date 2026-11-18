@@ -39,7 +39,7 @@ azguard budget add 5      Add $5 alert
 azguard budget list       List alerts
 azguard cost fetch       Fetch costs
 azguard cost current      Current costs
-azguard cleanup          Cleanup guide
+azguard cleanup          Delete idle and orphaned resources (dry run unless --apply)
 ```
 
 ---

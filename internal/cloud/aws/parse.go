@@ -45,6 +45,18 @@ func (t xmlTags) createdBy() string {
 	return t.get("CreatedBy", "created-by", "aws:createdBy", "Owner")
 }
 
+// all returns every tag. The map is non-nil so callers can tell tags were loaded.
+func (t xmlTags) all() map[string]string {
+	out := make(map[string]string, len(t.Items))
+	for _, item := range t.Items {
+		if item.Key == "" {
+			continue
+		}
+		out[item.Key] = item.Value
+	}
+	return out
+}
+
 func (t xmlTags) name() string {
 	return t.get("Name")
 }
@@ -90,6 +102,7 @@ func ParseVolumes(body []byte, region string) ([]inventory.Volume, string, error
 				Status     string  `xml:"status"`
 				AZ         string  `xml:"availabilityZone"`
 				VolumeType string  `xml:"volumeType"`
+				CreateTime string  `xml:"createTime"`
 				Attach     struct {
 					Items []struct {
 						VolumeID string `xml:"volumeId"`
@@ -117,6 +130,8 @@ func ParseVolumes(body []byte, region string) ([]inventory.Volume, string, error
 			CreatedBy:       item.Tags.createdBy(),
 			SizeGB:          item.Size,
 			AttachmentCount: len(item.Attach.Items),
+			Tags:            item.Tags.all(),
+			CreatedAt:       parseTime(item.CreateTime),
 		})
 	}
 	return out, resp.NextToken, nil
@@ -152,6 +167,7 @@ func ParseAddresses(body []byte, region string) ([]inventory.Address, string, er
 			Region:       region,
 			CreatedBy:    item.Tags.createdBy(),
 			Associated:   item.Association != "" || item.InstanceID != "" || item.ENI != "",
+			Tags:         item.Tags.all(),
 		})
 	}
 	return out, resp.NextToken, nil
@@ -191,6 +207,7 @@ func ParseENIPublicIPs(body []byte, region string) ([]inventory.ENIPublic, strin
 			PublicIP:     item.Assoc.PublicIP,
 			Region:       reg,
 			CreatedBy:    item.Tags.createdBy(),
+			Tags:         item.Tags.all(),
 		})
 	}
 	return out, resp.NextToken, nil
@@ -220,6 +237,7 @@ func ParseNATGateways(body []byte, region string) ([]inventory.NATGateway, strin
 			State:     item.State,
 			CreatedBy: item.Tags.createdBy(),
 			CreatedAt: parseTime(item.CreateTime),
+			Tags:      item.Tags.all(),
 		})
 	}
 	return out, resp.NextToken, nil
@@ -256,6 +274,7 @@ func ParseVPCEndpoints(body []byte, region string) ([]inventory.VPCEndpoint, str
 				Type    string `xml:"vpcEndpointType"`
 				Svc     string `xml:"serviceName"`
 				State   string `xml:"state"`
+				Created string `xml:"creationTimestamp"`
 				Subnets struct {
 					Items []string `xml:"item"`
 				} `xml:"subnetIds"`
@@ -276,6 +295,8 @@ func ParseVPCEndpoints(body []byte, region string) ([]inventory.VPCEndpoint, str
 			ServiceName:  item.Svc,
 			State:        item.State,
 			AZCount:      len(item.Subnets.Items),
+			Tags:         item.Tags.all(),
+			CreatedAt:    parseTime(item.Created),
 		})
 	}
 	return out, resp.NextToken, nil
@@ -294,7 +315,8 @@ func ParseInstances(body []byte, region string) ([]inventory.Instance, string, e
 						State struct {
 							Name string `xml:"name"`
 						} `xml:"instanceState"`
-						Placement struct {
+						LaunchTime string `xml:"launchTime"`
+						Placement  struct {
 							AZ string `xml:"availabilityZone"`
 						} `xml:"placement"`
 						Block struct {
@@ -328,6 +350,8 @@ func ParseInstances(body []byte, region string) ([]inventory.Instance, string, e
 				InstanceType: item.Type,
 				State:        item.State.Name,
 				CreatedBy:    item.Tags.createdBy(),
+				Tags:         item.Tags.all(),
+				CreatedAt:    parseTime(item.LaunchTime),
 			}
 			for _, b := range item.Block.Items {
 				if b.EBS.VolumeID == "" {
@@ -348,9 +372,10 @@ func ParseLoadBalancers(body []byte) ([]inventory.LoadBalancer, string, error) {
 			NextToken string `xml:"NextMarker"`
 			Set       struct {
 				Members []struct {
-					ARN  string `xml:"LoadBalancerArn"`
-					Name string `xml:"LoadBalancerName"`
-					Type string `xml:"Type"`
+					ARN     string `xml:"LoadBalancerArn"`
+					Name    string `xml:"LoadBalancerName"`
+					Type    string `xml:"Type"`
+					Created string `xml:"CreatedTime"`
 				} `xml:"member"`
 			} `xml:"LoadBalancers"`
 		} `xml:"DescribeLoadBalancersResult"`
@@ -362,10 +387,11 @@ func ParseLoadBalancers(body []byte) ([]inventory.LoadBalancer, string, error) {
 	out := make([]inventory.LoadBalancer, 0, len(resp.Result.Set.Members))
 	for _, item := range resp.Result.Set.Members {
 		out = append(out, inventory.LoadBalancer{
-			ARN:    item.ARN,
-			Name:   item.Name,
-			Region: regionFromARN(item.ARN),
-			Type:   item.Type,
+			ARN:       item.ARN,
+			Name:      item.Name,
+			Region:    regionFromARN(item.ARN),
+			Type:      item.Type,
+			CreatedAt: parseTime(item.Created),
 		})
 	}
 	next := resp.Result.NextToken
@@ -488,6 +514,7 @@ func ParseSnapshots(body []byte, region string) ([]inventory.Snapshot, string, e
 			CreatedBy: item.Tags.createdBy(),
 			SizeGB:    item.Size,
 			CreatedAt: parseTime(item.StartTime),
+			Tags:      item.Tags.all(),
 		})
 	}
 	return out, resp.NextToken, nil
@@ -512,6 +539,44 @@ func ParseRegions(body []byte) ([]string, error) {
 			continue
 		}
 		out = append(out, item.Name)
+	}
+	return out, nil
+}
+
+// ParseELBTags reads an ELBv2 DescribeTags response.
+// Each ARN in the response gets a non-nil tag map, empty when the load balancer has no tags.
+func ParseELBTags(body []byte) (map[string]map[string]string, error) {
+	var resp struct {
+		Result struct {
+			Set struct {
+				Members []struct {
+					ARN  string `xml:"ResourceArn"`
+					Tags struct {
+						Members []struct {
+							Key   string `xml:"Key"`
+							Value string `xml:"Value"`
+						} `xml:"member"`
+					} `xml:"Tags"`
+				} `xml:"member"`
+			} `xml:"TagDescriptions"`
+		} `xml:"DescribeTagsResult"`
+	}
+	if err := unmarshalXML(body, &resp); err != nil {
+		return nil, fmt.Errorf("parse DescribeTags: %w", err)
+	}
+	out := make(map[string]map[string]string, len(resp.Result.Set.Members))
+	for _, item := range resp.Result.Set.Members {
+		if item.ARN == "" {
+			continue
+		}
+		tags := make(map[string]string, len(item.Tags.Members))
+		for _, tag := range item.Tags.Members {
+			if tag.Key == "" {
+				continue
+			}
+			tags[tag.Key] = tag.Value
+		}
+		out[item.ARN] = tags
 	}
 	return out, nil
 }

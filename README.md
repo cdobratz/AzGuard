@@ -18,7 +18,7 @@ azguard monitors your Azure and AWS usage against free tier limits and alerts yo
 - **Free Tier Scanner** - Scan your subscription for potential overages
 - **Budget Alerts** - Set custom alerts ($1-$100) to prevent bill shock
 - **Cost Tracking** - Monitor current spend against free tier limits
-- **Resource Cleanup** - Interactive guide to identify unused resources
+- **Resource Cleanup** - Dry-run by default, then delete idle and orphaned resources after you confirm
 - **Historical Trends** - Track spending over time
 
 ## Quick Start
@@ -79,7 +79,7 @@ azguard cost fetch
 | `azguard budget list` | List all budget alerts |
 | `azguard cost current` | Show current month costs |
 | `azguard cost history` | Show cost history |
-| `azguard cleanup` | Interactive cleanup guide |
+| `azguard cleanup` | Delete idle and orphaned resources (dry run unless `--apply`) |
 
 ### AWS
 
@@ -161,7 +161,7 @@ azguard init --azure free --aws free --azure-credit 50 --azure-credit-expires 20
 
 ## Idle and orphaned resources
 
-`azguard resources` is read-only. It finds resources that are easy to forget and that keep billing: unattached disks, idle public IPs, NAT gateways, stopped-but-still-billed VMs, old snapshots, and the AWS equivalents. It does not delete anything.
+`azguard resources` is read-only. It finds resources that are easy to forget and that keep billing: unattached disks, idle public IPs, NAT gateways, stopped-but-still-billed VMs, old snapshots, and the AWS equivalents. It does not delete anything. `azguard cleanup` is the command that deletes, and only after `--apply`.
 
 ```bash
 azguard resources
@@ -232,7 +232,74 @@ On AWS, attach **ReadOnlyAccess**, or only these actions:
 - `cloudwatch:GetMetricStatistics`
 - `pricing:GetProducts`
 
-Do not grant delete, terminate, release, stop, or deallocate permissions for this command.
+Do not grant delete, terminate, release, stop, or deallocate permissions for `azguard resources`. Those permissions belong on `azguard cleanup` only.
+
+## Clean up forgotten resources
+
+`azguard cleanup` deletes resources that `azguard resources` already finds, on Azure and AWS. The default is a dry run. It prints the resource id, type, region, age, and estimated monthly cost, and it does not delete anything.
+
+```bash
+azguard cleanup
+azguard cleanup --cloud aws --region us-east-1 --type ebs --older-than 30d
+azguard cleanup --apply
+azguard cleanup --apply --yes --type disk --tag env=dev
+azguard cleanup --output json
+```
+
+Deletion runs only when you pass `--apply` and then type `yes` at the prompt. `--yes` skips the prompt for scripts. `--yes` without `--apply` still changes nothing.
+
+A resource tagged `azguard:keep=true` is never deleted, including with `--apply`, `--yes`, and `--include-unsafe`. The values `yes` and `1` are treated as protected too. If tags could not be loaded, the resource is skipped so the protection tag cannot be missed.
+
+By default only findings with `safe_to_delete` true are eligible. That means nothing is attached. Stopped VMs, old snapshots, idle NAT gateways, in-use public IPv4 addresses, load balancers, interface endpoints, and log analytics workspaces are skipped. `--include-unsafe` adds them. Deleting those can drop data or change connectivity. Read the hint before you confirm.
+
+`--older-than` takes a duration such as `720h` or `30d`. Resources younger than that, and resources whose age is unknown, are skipped. Elastic IP allocations do not have a create time in the describe API, so `--older-than` skips them. `--type` is a rule id (`azure.disk.unattached`) or a short name (`disk`, `ebs`, `eip`, `snapshot`, `nat`, `nic`, `plan`). Repeat `--type`, `--tag key=value`, and `--region`. `--tag` requires every listed tag. Matching is case-insensitive.
+
+The summary counts resources that would be deleted, were deleted, were skipped, and failed. The command exits **1** when any delete fails, when discovery hits an error other than a cloud that is not configured, or when it finds nothing because every scanned cloud is not configured.
+
+Credentials are the same chain as the rest of azguard. Azure uses `az login`, a service principal, or managed identity. AWS uses the OS keychain (service name `azguard`), the environment (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`), or the AWS CLI credential chain (`aws configure export-credentials`, which includes profiles and SSO). See [Configuration](#configuration). This command does not write secrets.
+
+Azure accepts the delete and finishes it in the background (HTTP 202). A resource that is already gone is counted as deleted so a second run can succeed.
+
+An unassociated Elastic IP is also an `aws.ipv4.public` finding. Cleanup releases that allocation once. An auto-assigned public IPv4 address (no `eipalloc-` id) is not a separate resource, and cleanup skips it.
+
+### What cleanup can delete
+
+| Rule | Default | API |
+|------|---------|-----|
+| `azure.disk.unattached` | yes | ARM delete |
+| `azure.publicip.unassociated` | yes | ARM delete |
+| `azure.nic.unattached` | yes | ARM delete |
+| `azure.appserviceplan.empty` | yes | ARM delete |
+| `azure.natgateway.no_subnets` | yes | ARM delete |
+| `aws.ebs.unattached` | yes | `DeleteVolume` |
+| `aws.eip.unassociated` | yes | `ReleaseAddress` |
+| `aws.ipv4.public` | only an unassociated Elastic IP (`eipalloc-`) | `ReleaseAddress` |
+| `azure.vm.stopped_allocated` | `--include-unsafe` | ARM delete |
+| `azure.snapshot.old` | `--include-unsafe` | ARM delete |
+| `azure.loganalytics.empty_ingestion` | `--include-unsafe` | ARM delete |
+| `aws.natgateway.idle` | `--include-unsafe` | `DeleteNatGateway` |
+| `aws.vpcendpoint.interface` | `--include-unsafe` | `DeleteVpcEndpoints` |
+| `aws.ec2.stopped_with_ebs` | `--include-unsafe` | `TerminateInstances` |
+| `aws.snapshot.old` | `--include-unsafe` | `DeleteSnapshot` |
+| `aws.elb.no_healthy_targets` | `--include-unsafe` | `DeleteLoadBalancer` |
+| `aws.ipv4.public` on an in-use Elastic IP | `--include-unsafe` | `ReleaseAddress` |
+
+### Permissions
+
+`cleanup` needs the read permissions of `azguard resources`, plus permission to delete the types in the table.
+
+On Azure, delete on those resource types is enough (Contributor covers them). `azguard resources` stays read-only.
+
+On AWS, in addition to the describe actions:
+
+- `ec2:DeleteVolume`
+- `ec2:ReleaseAddress`
+- `ec2:DeleteNatGateway`
+- `ec2:DeleteVpcEndpoints`
+- `ec2:TerminateInstances`
+- `ec2:DeleteSnapshot`
+- `elasticloadbalancing:DeleteLoadBalancer`
+- `elasticloadbalancing:DescribeTags` (so `azguard:keep` can be read on load balancers)
 
 ## Watch for new billable resources
 

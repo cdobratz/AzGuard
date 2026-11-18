@@ -14,6 +14,8 @@ type Volume struct {
 	CreatedBy       string
 	SizeGB          float64
 	AttachmentCount int
+	Tags            map[string]string
+	CreatedAt       time.Time
 }
 
 // Address is an Elastic IP allocation.
@@ -23,6 +25,8 @@ type Address struct {
 	Region       string
 	CreatedBy    string
 	Associated   bool
+	Tags         map[string]string
+	CreatedAt    time.Time
 }
 
 // ENIPublic is a public IPv4 address on a network interface.
@@ -32,6 +36,7 @@ type ENIPublic struct {
 	PublicIP     string
 	Region       string
 	CreatedBy    string
+	Tags         map[string]string
 }
 
 // NATGateway is an AWS NAT gateway plus the bytes it processed in the lookback window.
@@ -42,6 +47,7 @@ type NATGateway struct {
 	CreatedBy string
 	CreatedAt time.Time
 	BytesOut  float64
+	Tags      map[string]string
 }
 
 // VPCEndpoint is a VPC endpoint. Gateway endpoints are free and are not findings.
@@ -53,6 +59,8 @@ type VPCEndpoint struct {
 	ServiceName  string
 	State        string
 	AZCount      int
+	Tags         map[string]string
+	CreatedAt    time.Time
 }
 
 // Instance is an EC2 instance and the EBS volumes still attached to it.
@@ -64,6 +72,8 @@ type Instance struct {
 	State        string
 	CreatedBy    string
 	Volumes      []AttachedVolume
+	Tags         map[string]string
+	CreatedAt    time.Time
 }
 
 // AttachedVolume is an EBS volume attached to a stopped instance.
@@ -82,6 +92,8 @@ type LoadBalancer struct {
 	CreatedBy string
 	Healthy   int
 	Total     int
+	Tags      map[string]string
+	CreatedAt time.Time
 }
 
 // Snapshot is an EBS or Azure snapshot.
@@ -93,6 +105,7 @@ type Snapshot struct {
 	CreatedBy string
 	SizeGB    float64
 	CreatedAt time.Time
+	Tags      map[string]string
 }
 
 // AttachVolumeSizes copies size and type from volumes onto instance attachments.
