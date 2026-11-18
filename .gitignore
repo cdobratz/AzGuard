@@ -1,14 +1,24 @@
-# Binaries built at the repo root. A bare "azguard" pattern also ignores cmd/azguard.
+# Binaries built at the repo root. A leading slash keeps cmd/azguard tracked.
 /azguard
 /azguard.exe
+/agent
+/agent-api
+/agent.save
 *.exe
+*.exe~
 *.dll
 *.so
 *.dylib
 
-# Build artifacts
+# Build artifacts and a local Go toolchain. Do not commit these again.
 dist/
+.go/
+/bin/
 *.test
+*.out
+# cdk.out is a CloudFormation test fixture, not compiler output.
+!internal/iac/testdata/cdk.out/
+!internal/iac/testdata/cdk.out/**
 
 # IDE and editor files
 .vscode/
