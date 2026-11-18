@@ -14,6 +14,10 @@ import (
 
 type TokenProvider func() (string, error)
 
+// identityEndpoint is the Microsoft identity host for service principal tokens.
+// Tests point it at a local server. The default is the public identity platform.
+var identityEndpoint = "https://login.microsoftonline.com"
+
 var TokenProviders = map[string]TokenProvider{
 	"cli":               GetCLIToken,
 	"service_principal": nil,
@@ -41,7 +45,7 @@ func GetCLIToken() (string, error) {
 }
 
 func GetSPToken(tenantID, clientID, clientSecret string) (string, error) {
-	url := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", tenantID)
+	url := fmt.Sprintf("%s/%s/oauth2/v2.0/token", strings.TrimRight(identityEndpoint, "/"), tenantID)
 
 	data := fmt.Sprintf(
 		"grant_type=client_credentials&client_id=%s&client_secret=%s&scope=https://management.azure.com/.default",

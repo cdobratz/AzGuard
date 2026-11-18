@@ -21,6 +21,7 @@ func TestLimitEntriesHaveSourceAndDate(t *testing.T) {
 			t.Fatal(err)
 		}
 		var doc struct {
+			Version  int `yaml:"version"`
 			Services map[string]struct {
 				SourceURL  string `yaml:"source_url"`
 				VerifiedOn string `yaml:"verified_on"`
@@ -28,6 +29,9 @@ func TestLimitEntriesHaveSourceAndDate(t *testing.T) {
 		}
 		if err := yaml.Unmarshal(body, &doc); err != nil {
 			t.Fatal(err)
+		}
+		if doc.Version < 1 {
+			t.Fatalf("%s is missing version", path)
 		}
 		if len(doc.Services) == 0 {
 			t.Fatalf("%s has no services", path)

@@ -6,6 +6,9 @@
 # These are the limits for AWS's free tier
 # Used by azguard to detect potential overages
 # Reference: https://aws.amazon.com/free/
+# This file is embedded in the azguard binary. version is required.
+
+version: 1
 
 services:
   # EC2 - Elastic Compute Cloud

@@ -1,6 +1,9 @@
 # Azure Free Tier Limits
 # These are the limits for Azure's free account tier
 # Used by azguard to detect potential overages
+# This file is embedded in the azguard binary. version is required.
+
+version: 1
 
 services:
   # Virtual Machines
