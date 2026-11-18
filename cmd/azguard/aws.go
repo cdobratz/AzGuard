@@ -66,7 +66,7 @@ func awsStatusCmd() *cobra.Command {
 
 			fmt.Println("\n🛡️  AWS account")
 			fmt.Println("═══════════════════════════════")
-			fmt.Print(account.DescribeAWS(awsProfile()))
+			fmt.Print(account.DescribeAWS(awsProfile(ctx)))
 			fmt.Println()
 
 			if !awsCostClient.IsConfigured() {
@@ -140,6 +140,8 @@ func awsScanCmd() *cobra.Command {
 
 			fmt.Println("\n🔍 AWS Free Tier Scan")
 			fmt.Println("═══════════════════════════════")
+			fmt.Print(account.DescribeAWS(awsProfile(ctx)))
+			fmt.Println()
 
 			if !awsCostClient.IsConfigured() {
 				return fmt.Errorf("AWS credentials not configured")
