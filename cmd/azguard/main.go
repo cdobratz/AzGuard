@@ -190,15 +190,14 @@ Shows which services are approaching or exceeding their free allocations.`,
 
 			fmt.Println("\n🔍 Azure Free Tier Scan")
 			fmt.Println("═══════════════════════════════")
+			fmt.Println()
+			fmt.Print(account.FormatAzure(azureProfile(ctx), summary.TotalCost))
+			fmt.Println()
 
 			if len(summary.ByService) == 0 {
 				fmt.Println("No costs recorded yet. Run 'azguard cost fetch' first.")
 				return nil
 			}
-
-			fmt.Println()
-			fmt.Print(account.FormatAzure(azureProfile(ctx), summary.TotalCost))
-			fmt.Println()
 
 			fmt.Println("By Service:")
 			fmt.Println("─────────────────────────────────")

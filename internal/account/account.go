@@ -27,6 +27,10 @@ type Profile struct {
 	SpendingLimit   *bool
 	CreditRemaining *float64
 	CreditExpires   string
+	// CreditSource is "config", "aws-billing", or "azure-consumption".
+	CreditSource string
+	// CreditNote explains a config-only figure or a difference from config.
+	CreditNote string
 }
 
 // ParseAzureAccount reads `az account show --output json`.
@@ -116,6 +120,11 @@ func fromConfig(kind, spendLimit, credit, expires string, azure bool) Profile {
 
 // FormatAzure renders status text. PAYG never includes a percent of a $200 free tier.
 func FormatAzure(p Profile, spend float64) string {
+	return FormatAzureAt(p, spend, time.Now())
+}
+
+// FormatAzureAt is FormatAzure with a fixed clock so tests can check days left.
+func FormatAzureAt(p Profile, spend float64, now time.Time) string {
 	var b strings.Builder
 	switch p.Kind {
 	case AzurePAYG:
@@ -127,16 +136,21 @@ func FormatAzure(p Profile, spend float64) string {
 			b.WriteString("Spending limit: on\n")
 		}
 		fmt.Fprintf(&b, "Current spend: $%.2f\n", spend)
-		writeCredit(&b, p)
 	default:
 		b.WriteString("Azure account type is not set. Run 'azguard init --azure free' or 'azguard init --azure payg'.\n")
 		fmt.Fprintf(&b, "Current spend: $%.2f\n", spend)
 	}
+	writeCredit(&b, p, now)
 	return b.String()
 }
 
 // DescribeAWS is the plan headline without a spend figure.
 func DescribeAWS(p Profile) string {
+	return DescribeAWSAt(p, time.Now())
+}
+
+// DescribeAWSAt is DescribeAWS with a fixed clock.
+func DescribeAWSAt(p Profile, now time.Time) string {
 	var b strings.Builder
 	switch p.Kind {
 	case AWSPaid:
@@ -150,30 +164,43 @@ func DescribeAWS(p Profile) string {
 	case AWSFree:
 		b.WriteString("AWS Free plan\n")
 		b.WriteString("This plan does not charge you unless you upgrade to Paid. See https://aws.amazon.com/free/\n")
-		writeCredit(&b, p)
 	default:
 		b.WriteString("AWS plan is not set. Run 'azguard init --aws free' or 'azguard init --aws paid'.\n")
 	}
+	writeCredit(&b, p, now)
 	return b.String()
 }
 
 // FormatAWS renders status text. A Paid plan never includes a percent of a $200 free tier.
 func FormatAWS(p Profile, spend float64) string {
-	text := DescribeAWS(p)
-	return text + fmt.Sprintf("Current spend: $%.2f\n", spend)
+	return FormatAWSAt(p, spend, time.Now())
 }
 
-func writeCredit(b *strings.Builder, p Profile) {
-	if p.CreditRemaining == nil && p.CreditExpires == "" {
+// FormatAWSAt is FormatAWS with a fixed clock.
+func FormatAWSAt(p Profile, spend float64, now time.Time) string {
+	return DescribeAWSAt(p, now) + fmt.Sprintf("Current spend: $%.2f\n", spend)
+}
+
+func writeCredit(b *strings.Builder, p Profile, now time.Time) {
+	if p.CreditRemaining == nil && strings.TrimSpace(p.CreditExpires) == "" && p.CreditNote == "" && p.CreditSource == "" {
 		return
 	}
 	if p.CreditRemaining != nil {
-		fmt.Fprintf(b, "Credit remaining: $%.2f", *p.CreditRemaining)
-		if p.CreditExpires != "" {
-			fmt.Fprintf(b, " (expires %s)", p.CreditExpires)
-		}
-		b.WriteString("\n")
-		return
+		fmt.Fprintf(b, "Credit remaining: $%.2f\n", *p.CreditRemaining)
 	}
-	fmt.Fprintf(b, "Credit expires: %s\n", p.CreditExpires)
+	if days, date, ok := DaysLeft(p.CreditExpires, now); ok {
+		if days < 0 {
+			fmt.Fprintf(b, "Days left: 0 (expired %s)\n", date)
+		} else {
+			fmt.Fprintf(b, "Days left: %d (expires %s)\n", days, date)
+		}
+	} else if strings.TrimSpace(p.CreditExpires) != "" {
+		fmt.Fprintf(b, "Credit expires: %s\n", strings.TrimSpace(p.CreditExpires))
+	}
+	if p.CreditSource != "" {
+		fmt.Fprintf(b, "Credit source: %s\n", p.CreditSource)
+	}
+	if p.CreditNote != "" {
+		fmt.Fprintf(b, "Note: %s\n", p.CreditNote)
+	}
 }

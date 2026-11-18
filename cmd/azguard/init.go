@@ -123,17 +123,19 @@ func firstNonEmpty(values ...string) string {
 
 func azureProfile(ctx context.Context) account.Profile {
 	stored := account.AzureFromConfig(cfg.Account.Azure, cfg.Account.AzureCreditRemaining, cfg.Account.AzureCreditExpires)
+	base := stored
 	live, err := account.LookupAzure(ctx)
-	if err != nil || live.Kind == "" {
-		return stored
+	if err == nil && live.Kind != "" {
+		base = live
+		if base.CreditRemaining == nil {
+			base.CreditRemaining = stored.CreditRemaining
+			base.CreditExpires = stored.CreditExpires
+		}
 	}
-	if live.CreditRemaining == nil {
-		live.CreditRemaining = stored.CreditRemaining
-		live.CreditExpires = stored.CreditExpires
-	}
-	return live
+	return attachAzureCredit(ctx, base, stored)
 }
 
-func awsProfile() account.Profile {
-	return account.AWSFromConfig(cfg.Account.AWS, cfg.Account.AWSSpendLimit, cfg.Account.AWSCreditRemaining, cfg.Account.AWSCreditExpires)
+func awsProfile(ctx context.Context) account.Profile {
+	stored := account.AWSFromConfig(cfg.Account.AWS, cfg.Account.AWSSpendLimit, cfg.Account.AWSCreditRemaining, cfg.Account.AWSCreditExpires)
+	return attachAWSCredit(ctx, stored)
 }
