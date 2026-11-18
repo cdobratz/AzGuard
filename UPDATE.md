@@ -8,6 +8,8 @@ When a new version of azguard is released, you need to update two package manage
 1. **Scoop bucket** (scoop-azguard) - For Windows users
 2. **Homebrew tap** (homebrew-azguard) - For macOS and Linux users
 
+This CLI repository does not contain those manifests. Edit `bucket/azguard.json` only in `cdobratz/scoop-azguard`, and edit `Formula/azguard.rb` only in `cdobratz/homebrew-azguard`. GoReleaser does not write either file.
+
 ## Prerequisites
 
 - New release published on GitHub with binaries (done automatically by GoReleaser)
