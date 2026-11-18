@@ -40,7 +40,7 @@ Please be respectful and professional in all interactions. We follow the [Contri
 
 ### Prerequisites
 
-- Go 1.21+
+- Go 1.26+
 - Git
 
 ### Setup

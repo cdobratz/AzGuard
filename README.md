@@ -3,7 +3,7 @@
 **One command to make sure your Azure and AWS free tiers don't surprise you with a bill.**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8.svg)
+![Go Version](https://img.shields.io/badge/Go-1.26+-00ADD8.svg)
 
 ## The Problem
 
