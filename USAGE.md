@@ -11,28 +11,34 @@
 
 ## Installation
 
-### One-Liner (Recommended)
+### Scoop (Windows)
+
+The bucket name is `azguard`. The manifest lives in `cdobratz/scoop-azguard` (`bucket/azguard.json`), not in this repository.
+
+```powershell
+scoop bucket add azguard https://github.com/cdobratz/scoop-azguard
+scoop install azguard
+```
+
+### Homebrew (macOS and Linux)
+
+The tap is `cdobratz/azguard` and the formula is `azguard` (`Formula/azguard.rb` in `cdobratz/homebrew-azguard`).
+
+```bash
+brew install cdobratz/azguard/azguard
+```
+
+### Website installer (macOS and Linux)
 
 ```bash
 curl -sSL https://azguard.dev/install.sh | bash
 ```
 
+That script is hosted at azguard.dev. It is not stored in this repository. It downloads the latest GitHub release and checks `checksums.txt` before it installs. On Windows, use Scoop.
+
 ### Manual Install
 
 Download the archive for your OS and architecture from the [latest release](https://github.com/cdobratz/AzGuard/releases/latest) (`azguard_<version>_<os>_<arch>.tar.gz` or `.zip`, plus `checksums.txt`). Verify the archive against `checksums.txt`, extract it, and put the `azguard` binary on your `PATH`.
-
-### Package Managers
-
-```powershell
-# Scoop (Windows)
-scoop bucket add azguard https://github.com/cdobratz/scoop-azguard
-scoop install azguard
-```
-
-```bash
-# Homebrew (macOS/Linux)
-brew install cdobratz/azguard/azguard
-```
 
 ---
 
