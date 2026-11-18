@@ -39,6 +39,7 @@ func main() {
 Examples:
   azguard scan              Scan for free tier overages
   azguard resources        Find idle and orphaned resources
+  azguard cleanup          Show resources that would be deleted
   azguard budget add 5     Add a $5 budget alert
   azguard watch            Poll for new billable resources`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
@@ -346,32 +347,6 @@ func budgetCmd() *cobra.Command {
 	})
 
 	return cmd
-}
-
-func cleanupCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "cleanup",
-		Short: "Interactive cleanup of orphaned resources",
-		Long:  `Help identify and remove unused resources to prevent charges.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("\n🧹 Resource Cleanup Guide")
-			fmt.Println("═══════════════════════════════")
-			fmt.Println("Common resources to check for cleanup:")
-			fmt.Println()
-			fmt.Println("1. Stop unused Virtual Machines:")
-			fmt.Println("   az vm stop --name <vm-name> --resource-group <rg>")
-			fmt.Println()
-			fmt.Println("2. Delete unused storage accounts:")
-			fmt.Println("   az storage account delete --name <storage-name>")
-			fmt.Println()
-			fmt.Println("3. Remove unused app services:")
-			fmt.Println("   az webapp delete --name <app-name> --resource-group <rg>")
-			fmt.Println()
-			fmt.Println("4. Check for orphaned disks:")
-			fmt.Println("   az disk list -o table")
-			return nil
-		},
-	}
 }
 
 func configCmd() *cobra.Command {

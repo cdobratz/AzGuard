@@ -158,8 +158,13 @@ azguard watch --webhook "$AZGUARD_WEBHOOK"
 azguard guard --budget 25 -- aws ec2 run-instances --instance-type t3.micro
 azguard guard report --fixture activity.json
 
-# Cleanup guide
+# Dry run: list what cleanup would delete (id, type, region, age, cost)
 azguard cleanup
+azguard cleanup --type disk --region eastus --older-than 30d
+
+# Delete after you type yes. --yes skips the prompt. azguard:keep=true is never deleted.
+azguard cleanup --apply
+azguard cleanup --apply --yes --cloud aws --type ebs
 ```
 
 ### Configuration

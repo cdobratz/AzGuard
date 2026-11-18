@@ -3,6 +3,8 @@ package azure
 // Resource Graph queries used by `azguard resources`. Each query is read-only.
 // The matching rule also filters the rows, so a recorded fixture can include
 // resources that should not become findings.
+// tags and createdAt are projected so `azguard cleanup` can honor azguard:keep
+// and --older-than without a second inventory.
 const (
 	QueryUnattachedDisks = `
 Resources
@@ -11,7 +13,8 @@ Resources
 | extend sizeGB = todouble(properties.diskSizeGB)
 | extend skuName = tostring(sku.name)
 | extend createdBy = coalesce(tostring(systemData.createdBy), '')
-| project id, name, location, diskState, sizeGB, skuName, createdBy`
+| extend createdAt = coalesce(tostring(systemData.createdAt), '')
+| project id, name, location, diskState, sizeGB, skuName, createdBy, createdAt, tags`
 
 	QueryUnassociatedPublicIPs = `
 Resources
@@ -19,7 +22,8 @@ Resources
 | where isnull(properties.ipConfiguration)
 | extend skuName = tostring(sku.name)
 | extend createdBy = coalesce(tostring(systemData.createdBy), '')
-| project id, name, location, skuName, createdBy`
+| extend createdAt = coalesce(tostring(systemData.createdAt), '')
+| project id, name, location, skuName, createdBy, createdAt, tags`
 
 	QueryUnattachedNICs = `
 Resources
@@ -27,7 +31,8 @@ Resources
 | where isnull(properties.virtualMachine)
 | extend hasPrivateEndpoint = isnotnull(properties.privateEndpoint)
 | extend createdBy = coalesce(tostring(systemData.createdBy), '')
-| project id, name, location, hasPrivateEndpoint, createdBy`
+| extend createdAt = coalesce(tostring(systemData.createdAt), '')
+| project id, name, location, hasPrivateEndpoint, createdBy, createdAt, tags`
 
 	QueryStoppedAllocatedVMs = `
 Resources
@@ -35,7 +40,8 @@ Resources
 | extend powerState = tostring(properties.extended.instanceView.powerState.code)
 | extend vmSize = tostring(properties.hardwareProfile.vmSize)
 | extend createdBy = coalesce(tostring(systemData.createdBy), '')
-| project id, name, location, powerState, vmSize, createdBy`
+| extend createdAt = coalesce(tostring(systemData.createdAt), '')
+| project id, name, location, powerState, vmSize, createdBy, createdAt, tags`
 
 	QueryEmptyAppServicePlans = `
 Resources
@@ -43,7 +49,8 @@ Resources
 | extend numberOfSites = toint(properties.numberOfSites)
 | extend skuName = tostring(sku.name)
 | extend createdBy = coalesce(tostring(systemData.createdBy), '')
-| project id, name, location, skuName, numberOfSites, createdBy`
+| extend createdAt = coalesce(tostring(systemData.createdAt), '')
+| project id, name, location, skuName, numberOfSites, createdBy, createdAt, tags`
 
 	QuerySnapshots = `
 Resources
@@ -52,7 +59,8 @@ Resources
 | extend skuName = tostring(sku.name)
 | extend timeCreated = tostring(properties.timeCreated)
 | extend createdBy = coalesce(tostring(systemData.createdBy), '')
-| project id, name, location, skuName, sizeGB, timeCreated, createdBy`
+| extend createdAt = coalesce(tostring(properties.timeCreated), tostring(systemData.createdAt), '')
+| project id, name, location, skuName, sizeGB, timeCreated, createdBy, createdAt, tags`
 
 	QueryNATGateways = `
 Resources
@@ -60,7 +68,8 @@ Resources
 | extend subnetCount = iif(isnull(properties.subnets), 0, array_length(properties.subnets))
 | extend skuName = tostring(sku.name)
 | extend createdBy = coalesce(tostring(systemData.createdBy), '')
-| project id, name, location, skuName, subnetCount, createdBy`
+| extend createdAt = coalesce(tostring(systemData.createdAt), '')
+| project id, name, location, skuName, subnetCount, createdBy, createdAt, tags`
 
 	QueryWorkspaces = `
 Resources
@@ -68,7 +77,8 @@ Resources
 | extend skuName = tostring(properties.sku.name)
 | extend retentionDays = toint(properties.retentionInDays)
 | extend createdBy = coalesce(tostring(systemData.createdBy), '')
-| project id, name, location, skuName, retentionDays, createdBy`
+| extend createdAt = coalesce(tostring(systemData.createdAt), '')
+| project id, name, location, skuName, retentionDays, createdBy, createdAt, tags`
 
 	QueryWorkspaceSolutions = `
 Resources
