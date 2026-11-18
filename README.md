@@ -1,25 +1,33 @@
 # azguard
 
-**One command to make sure your Azure and AWS free tiers don't surprise you with a bill.**
+**Find and clean up forgotten and AI-agent-created cloud resources on Azure and AWS.**
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Go Version](https://img.shields.io/badge/Go-1.26+-00ADD8.svg)
 
+azguard is a local, open source CLI. There is no hosted service and no paid tier.
+
 ## The Problem
 
-Azure's free tier has 65+ services with different expiration rules, usage caps, and hidden dependencies. A "free" VM triggers billable disks, IPs, and monitoring logs. Thousands of students, freelancers, and small teams get surprised by unexpected charges every month.
+Scripts, tutorials, and AI agents leave disks, public IPs, NAT gateways, snapshots, and stopped-but-still-billed VMs behind. Those resources keep charging after the session that created them is gone. Free-tier caps and leftover credits are a second problem: they expire, and a Pay-As-You-Go account does not have the same cap.
 
 ## The Solution
 
-azguard monitors your Azure and AWS usage against free tier limits and alerts you before you accidentally accumulate charges.
+azguard finds idle and orphaned resources on Azure and AWS, then deletes only what you confirm.
+
+`azguard cleanup` is a dry run unless you pass `--apply`. A resource tagged `azguard:keep=true` (also `yes` or `1`) is never deleted. If tags could not be loaded, the resource is skipped so that tag cannot be missed.
+
+Free-tier and credit tracking is the second part. `azguard status` and `azguard scan` show spend, account type, and any credit remaining and expiry stored by `azguard init`. A Pay-As-You-Go or Paid account is not shown as a percentage of a $200 free tier.
+
+This CLI does not read an agent transcript. Created-by is filled from Azure `systemData.createdBy` or an AWS `CreatedBy` / `Owner` tag when that value exists. `azguard watch` marks a service principal, an app-only token, an IAM access key, or an assumed role that is not IAM Identity Center as automation. `azguard guard` can block a billable command before it runs, including as a Claude Code hook.
 
 ## Features
 
-- **Free Tier Scanner** - Scan your subscription for potential overages
-- **Budget Alerts** - Set custom alerts ($1-$100) to prevent bill shock
-- **Cost Tracking** - Monitor current spend against free tier limits
-- **Resource Cleanup** - Dry-run by default, then delete idle and orphaned resources after you confirm
-- **Historical Trends** - Track spending over time
+- **Cleanup** - `azguard cleanup` lists idle and orphaned resources and deletes them only with `--apply`. `azguard:keep=true` is protected.
+- **Find** - `azguard resources` is read-only. It estimates a monthly list price. It does not delete.
+- **Watch and guard** - Poll for new billable creates, and block commands that would pass a session budget. Watch is not a live stream.
+- **Free tier and credit** - `azguard status`, `azguard scan`, and budget alerts. Credit amounts come from `azguard init` when you set them. Azure account type can also come from `az account show`.
+- **Local only** - Config, the SQLite history, and the session file stay on your machine.
 
 ## Quick Start
 
@@ -51,17 +59,20 @@ az login
 ### Basic Usage
 
 ```bash
-# Quick status check
+# Dry run: show what would be deleted. Nothing is deleted.
+azguard cleanup
+
+# Delete after you type yes. --yes skips the prompt.
+azguard cleanup --apply
+
+# Read-only list of idle and orphaned resources
+azguard resources
+
+# Spend, account type, and any credit stored by init
 azguard status
 
-# Scan for free tier overages
+# Compare recorded usage with free-tier limits
 azguard scan
-
-# Add a budget alert
-azguard budget add 5
-
-# Fetch latest costs
-azguard cost fetch
 ```
 
 ## Commands
@@ -70,16 +81,16 @@ azguard cost fetch
 
 | Command | Description |
 |---------|-------------|
-| `azguard status` | Quick overview of your Azure free tier status |
-| `azguard scan` | Scan for Azure free tier overages |
+| `azguard cleanup` | Delete idle and orphaned resources (dry run unless `--apply`; `azguard:keep=true` is kept) |
 | `azguard resources` | Find idle and orphaned resources, with a monthly cost estimate |
 | `azguard watch` | Poll for new billable resources and alert |
 | `azguard guard` | Block billable commands that exceed a session budget |
+| `azguard status` | Spend, account type, and any credit stored by `azguard init` |
+| `azguard scan` | Compare recorded usage with Azure free-tier limits |
 | `azguard budget add [amount]` | Add a budget alert ($1-$100) |
 | `azguard budget list` | List all budget alerts |
 | `azguard cost current` | Show current month costs |
 | `azguard cost history` | Show cost history |
-| `azguard cleanup` | Delete idle and orphaned resources (dry run unless `--apply`) |
 
 ### AWS
 
@@ -383,10 +394,10 @@ The session file is `~/.azguard/guard-session.json`. Report permissions are the 
 
 ## How It Works
 
-1. **Authentication** - Uses your existing Azure CLI credentials (`az login`)
-2. **Cost Query** - Queries Azure Cost Management API (always free)
-3. **Limit Check** - Compares usage against known free tier limits
-4. **Alert** - Notifies you when approaching or exceeding limits
+1. **Find** - `azguard resources` reads Azure Resource Graph and AWS describe APIs with read-only permissions
+2. **Clean up** - `azguard cleanup` prints that list as a dry run. Deletion runs only with `--apply` and a confirmation, and never for `azguard:keep=true`
+3. **Account and credit** - `azguard status` uses `az account show` when it can, and the credit fields from `azguard init` otherwise
+4. **Free-tier check** - `azguard scan` compares recorded cost with the bundled free-tier table
 
 ## Budget Presets
 
@@ -399,19 +410,13 @@ $20  Higher budget - warning before limit
 
 ## Use Cases
 
-- **Students** - Learning Azure without accumulating charges
-- **Freelancers** - Client projects on limited budgets
-- **Bootcamp Grads** - First cloud experience
-- **Small Teams** - Quick cost visibility without enterprise tools
+- **Forgotten resources** - Disks, IPs, NAT gateways, and snapshots left behind by a script or an agent
+- **Agent sessions** - See automation principals in `azguard watch`, and block a billable command with `azguard guard`
+- **Free tier and credits** - Students, freelancers, and small teams who also need a local view of caps and leftover credit
 
 ## Why azguard?
 
-| Tool | Focus | Price |
-|------|-------|-------|
-| Azure Portal | Enterprise billing | Free but complex |
-| Infracost | Terraform costs | Free + Paid |
-| CloudZero | Enterprise FinOps | $30K+/year |
-| **azguard** | Free tier protection | **Free, open source** |
+azguard is one binary you run yourself. It finds resources that are easy to leave running, and it will not delete a protected tag. Free-tier and credit checks are included in the same CLI. It is not a billing portal and it does not replace the invoice.
 
 ## Roadmap
 

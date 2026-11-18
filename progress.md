@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**azguard** - One command to make sure your Azure free tier doesn't surprise you with a bill.
+**azguard** finds and cleans up forgotten and AI-agent-created resources on Azure and AWS. Free-tier and credit tracking is the second part. The CLI is local, open source, and has no paid tier.
 
 ### The Pivot
 
