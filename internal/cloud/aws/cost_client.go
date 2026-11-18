@@ -28,6 +28,8 @@ type CostClient struct {
 	SecretKey string
 	Token     string
 	HTTP      *http.Client
+	// Now overrides the clock used for SigV4. Nil means time.Now.
+	Now func() time.Time
 }
 
 // NewCostClient creates a new AWS cost client.
@@ -96,14 +98,14 @@ type CostQueryResult struct {
 
 // FreeTierUsage represents a single free tier usage entry.
 type FreeTierUsage struct {
-	ServiceName    string  `json:"service"`
-	UsageType      string  `json:"usageType"`
-	Description    string  `json:"description"`
-	ActualUsage    float64 `json:"actualUsageAmount"`
-	ForecastUsage  float64 `json:"forecastedUsageAmount"`
-	FreeTierLimit  float64 `json:"limit"`
-	Unit           string  `json:"unit"`
-	PercentUsed    float64 `json:"percentUsed"`
+	ServiceName   string  `json:"service"`
+	UsageType     string  `json:"usageType"`
+	Description   string  `json:"description"`
+	ActualUsage   float64 `json:"actualUsageAmount"`
+	ForecastUsage float64 `json:"forecastedUsageAmount"`
+	FreeTierLimit float64 `json:"limit"`
+	Unit          string  `json:"unit"`
+	PercentUsed   float64 `json:"percentUsed"`
 }
 
 // GetFreeTierUsage queries the AWS Free Tier Usage API.
@@ -254,7 +256,7 @@ func (c *CostClient) callAPI(ctx context.Context, endpoint, target, payload stri
 
 // signRequest applies AWS Signature V4 to an HTTP request.
 func (c *CostClient) signRequest(req *http.Request, payload []byte) {
-	now := time.Now().UTC()
+	now := c.now()
 	datestamp := now.Format("20060102")
 	amzdate := now.Format("20060102T150405Z")
 
@@ -298,6 +300,13 @@ func (c *CostClient) signRequest(req *http.Request, payload []byte) {
 	req.Header.Set("Authorization", fmt.Sprintf(
 		"AWS4-HMAC-SHA256 Credential=%s/%s, SignedHeaders=%s, Signature=%s",
 		c.AccessKey, credentialScope, signedHeaders, signature))
+}
+
+func (c *CostClient) now() time.Time {
+	if c != nil && c.Now != nil {
+		return c.Now().UTC()
+	}
+	return time.Now().UTC()
 }
 
 func sha256Hex(data []byte) string {

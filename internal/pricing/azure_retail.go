@@ -12,7 +12,8 @@ import (
 	"time"
 )
 
-const azureRetailEndpoint = "https://prices.azure.com/api/retail/prices"
+// azureRetailEndpoint is the public Retail Prices API. Tests point it at a fixture server.
+var azureRetailEndpoint = "https://prices.azure.com/api/retail/prices"
 
 // retailResponse is the Azure Retail Prices API payload.
 type retailResponse struct {
