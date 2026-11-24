@@ -7,56 +7,57 @@
 
 azguard is a local, open source CLI. There is no hosted service and no paid tier.
 
-## The Problem
+## Install
 
-Scripts, tutorials, and AI agents leave disks, public IPs, NAT gateways, snapshots, and stopped-but-still-billed VMs behind. Those resources keep charging after the session that created them is gone. Free-tier caps and leftover credits are a second problem: they expire, and a Pay-As-You-Go account does not have the same cap.
-
-## The Solution
-
-azguard finds idle and orphaned resources on Azure and AWS, then deletes only what you confirm.
-
-`azguard cleanup` is a dry run unless you pass `--apply`. A resource tagged `azguard:keep=true` (also `yes` or `1`) is never deleted. If tags could not be loaded, the resource is skipped so that tag cannot be missed.
-
-Free-tier and credit tracking is the second part. `azguard status` and `azguard scan` show spend, account type, and any credit remaining and expiry stored by `azguard init`. A Pay-As-You-Go or Paid account is not shown as a percentage of a $200 free tier.
-
-This CLI does not read an agent transcript. Created-by is filled from Azure `systemData.createdBy` or an AWS `CreatedBy` / `Owner` tag when that value exists. `azguard watch` marks a service principal, an app-only token, an IAM access key, or an assumed role that is not IAM Identity Center as automation. `azguard guard` can block a billable command before it runs, including as a Claude Code hook.
-
-## Features
-
-- **Cleanup** - `azguard cleanup` lists idle and orphaned resources and deletes them only with `--apply`. `azguard:keep=true` is protected.
-- **Find** - `azguard resources` is read-only. It estimates a monthly list price. It does not delete.
-- **Watch and guard** - Poll for new billable creates, and block commands that would pass a session budget. Watch is not a live stream.
-- **Free tier and credit** - `azguard status`, `azguard scan`, and budget alerts. Credit amounts come from `azguard init` when you set them. Azure account type can also come from `az account show`.
-- **Local only** - Config, the SQLite history, and the session file stay on your machine.
-
-## Quick Start
-
-Windows (Scoop). The bucket name is `azguard`.
+Windows (Scoop). The bucket is [cdobratz/scoop-azguard](https://github.com/cdobratz/scoop-azguard). The app name is `azguard`. A tagged release updates the manifest. See [UPDATE.md](UPDATE.md).
 
 ```powershell
 scoop bucket add azguard https://github.com/cdobratz/scoop-azguard
 scoop install azguard
 ```
 
-macOS and Linux (Homebrew). The tap is `cdobratz/azguard` and the formula is `azguard`.
+macOS and Linux (Homebrew). The tap is [cdobratz/homebrew-azguard](https://github.com/cdobratz/homebrew-azguard). The formula is `azguard`. A tagged release updates the formula. See [UPDATE.md](UPDATE.md).
 
 ```bash
 brew install cdobratz/azguard/azguard
 ```
 
-Or download the archive for your OS and architecture from the [latest release](https://github.com/cdobratz/AzGuard/releases/latest) (`azguard_<version>_<os>_<arch>.tar.gz` or `.zip`, plus `checksums.txt`). Verify the archive against `checksums.txt`, extract it, and put the `azguard` binary on your `PATH`.
-
-### Configure
+Or use the website installer (macOS and Linux). That script is hosted at [azguard.dev](https://azguard.dev). It is not stored in this repository. It downloads the latest GitHub release and checks `checksums.txt` before it installs.
 
 ```bash
-# Set your Azure subscription
-azguard config set subscription YOUR_SUBSCRIPTION_ID
+curl -sSL https://azguard.dev/install.sh | bash
+```
 
-# Or use Azure CLI auth (default)
+You can also download the archive for your OS and architecture from the [latest release](https://github.com/cdobratz/AzGuard/releases/latest) (`azguard_<version>_<os>_<arch>.tar.gz` or `.zip`, plus `checksums.txt`). Verify the archive against `checksums.txt`, extract it, and put the `azguard` binary on your `PATH`.
+
+Build from source (Go 1.26 or later):
+
+```bash
+git clone https://github.com/cdobratz/AzGuard.git
+cd AzGuard
+go build -o azguard ./cmd/azguard
+```
+
+Or install from the module:
+
+```bash
+go install github.com/cdobratz/azguard/cmd/azguard@latest
+```
+
+## Quick start
+
+Sign in with the Azure CLI (the default auth method). If `subscription_id` is empty, azguard can read it from `az account show`.
+
+```bash
 az login
 ```
 
-### Basic Usage
+Edit `~/.azguard/config.yaml` to set a subscription or AWS region yourself. Then record the account type once:
+
+```bash
+azguard init --azure payg --aws paid
+azguard init --azure free --aws free --azure-credit 50 --azure-credit-expires 2026-12-31
+```
 
 ```bash
 # Dry run: show what would be deleted. Nothing is deleted.
@@ -75,75 +76,51 @@ azguard status
 azguard scan
 ```
 
-## Commands
+`azguard cleanup` is a dry run unless you pass `--apply`. A resource tagged `azguard:keep=true` (also `yes` or `1`) is never deleted. If tags could not be loaded, the resource is skipped. Only findings marked `safe_to_delete` are eligible unless you pass `--include-unsafe`.
 
-### Azure
+## Commands
 
 | Command | Description |
 |---------|-------------|
 | `azguard cleanup` | Delete idle and orphaned resources (dry run unless `--apply`; `azguard:keep=true` is kept) |
 | `azguard resources` | Find idle and orphaned resources, with a monthly cost estimate |
-| `azguard watch` | Poll for new billable resources and alert |
+| `azguard watch` | Poll for new billable resources and alert (default interval 15 minutes; not a live stream) |
 | `azguard guard` | Block billable commands that exceed a session budget |
-| `azguard mcp serve` | Stdio MCP server for prevention checks (idle resources, preflight, approximate prices) |
+| `azguard mcp serve` | Stdio MCP server for prevention checks |
 | `azguard preflight` | Approximate monthly price of a Terraform plan or a cloud command |
 | `azguard status` | Spend, account type, and any credit stored by `azguard init` |
 | `azguard scan` | Compare recorded usage with Azure free-tier limits |
+| `azguard init` | Record Azure (`free` or `payg`) and AWS (`free` or `paid`) account type |
 | `azguard budget add [amount]` | Add a budget alert ($1-$100) |
 | `azguard budget list` | List all budget alerts |
 | `azguard cost current` | Show current month costs |
 | `azguard cost history` | Show cost history |
-
-### AWS
-
-| Command | Description |
-|---------|-------------|
+| `azguard cost fetch` | Fetch and store costs from Azure |
 | `azguard aws status` | Check your AWS free tier usage |
 | `azguard aws scan` | Scan AWS services approaching limits |
 | `azguard aws alerts --threshold 80` | Set alert thresholds (percentage) |
 | `azguard aws resources` | List free tier eligible services |
 | `azguard aws cost` | View AWS cost breakdown |
 
-## Installation
-
-### Scoop (Windows)
-
-The bucket is [cdobratz/scoop-azguard](https://github.com/cdobratz/scoop-azguard). The manifest is `bucket/azguard.json`, and the app name is `azguard`. A tagged release updates that manifest. See [UPDATE.md](UPDATE.md).
-
-```powershell
-scoop bucket add azguard https://github.com/cdobratz/scoop-azguard
-scoop install azguard
-```
-
-### Homebrew (macOS and Linux)
-
-The tap is [cdobratz/homebrew-azguard](https://github.com/cdobratz/homebrew-azguard). The formula is `Formula/azguard.rb`. A tagged release updates that formula. See [UPDATE.md](UPDATE.md).
-
 ```bash
-brew install cdobratz/azguard/azguard
+azguard resources --output json
+azguard resources --cloud aws --region us-east-1
+azguard resources --all-regions
+azguard cleanup --cloud aws --region us-east-1 --type ebs --older-than 30d
+azguard cleanup --apply --yes --type disk --tag env=dev
+azguard watch --once
+azguard watch --interval 15m --webhook "$AZGUARD_WEBHOOK"
+azguard guard --budget 25 -- aws ec2 run-instances --instance-type t3.micro
+azguard guard hook --budget 25
+azguard preflight --plan plan.json
+azguard preflight --command "az vm create -g rg -n vm --size Standard_B1s"
 ```
 
-### Website installer (macOS and Linux)
+`--output` (or `-o`) is `table`, `json`, or `csv` on the root command. `azguard resources --fail-over 25` exits 2 when the estimated monthly total is greater than $25.
 
-```bash
-curl -sSL https://azguard.dev/install.sh | bash
-```
+See `azguard --help` for `budget remove`, `budget presets`, `cost forecast`, `config list`, `guard report`, and `version`.
 
-That script is hosted at azguard.dev. It is not stored in this repository. It downloads the latest GitHub release and checks `checksums.txt` before it installs. On Windows, use Scoop.
-
-### Build from Source
-
-```bash
-git clone https://github.com/cdobratz/AzGuard.git
-cd AzGuard
-go build -o azguard ./cmd/azguard
-```
-
-Install from the module:
-
-```bash
-go install github.com/cdobratz/azguard/cmd/azguard@latest
-```
+The composite action in `action.yml` is not on the GitHub Marketplace. Call it from a checkout of this repository, or from a ref you pin. An example workflow is `examples/azguard.yml`. It runs `azguard preflight` on a `terraform show -json` plan and can comment on a pull request.
 
 ## Configuration
 
@@ -163,326 +140,14 @@ storage:
   path: ~/.azguard/data.db
 
 guard:
-  budget_usd: 25  # optional session budget for azguard guard. --budget overrides this.
+  budget_usd: 0  # USD per month for azguard guard. --budget overrides this. 0 warns and allows.
 ```
 
 Cloud secrets are read from the environment (`AZURE_CLIENT_SECRET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`) or from the OS keychain (service name `azguard`). If a config file still has those fields, the next start copies them into the keychain and removes them from the file. When the keychain is unavailable, the file is left as it is.
 
 `azguard init` records the account type once. `status` uses that answer when the cloud API does not say. A Pay-As-You-Go or Paid account is not shown as a percentage of a $200 free tier.
 
-```bash
-azguard init --azure payg --aws paid
-azguard init --azure free --aws free --azure-credit 50 --azure-credit-expires 2026-12-31
-```
-
-## Idle and orphaned resources
-
-`azguard resources` is read-only. It finds resources that are easy to forget and that keep billing: unattached disks, idle public IPs, NAT gateways, stopped-but-still-billed VMs, old snapshots, and the AWS equivalents. It does not delete anything. `azguard cleanup` is the command that deletes, and only after `--apply`.
-
-```bash
-azguard resources
-azguard resources --output json
-azguard resources --output csv --fail-over 25
-azguard resources --cloud aws --region us-east-1
-azguard resources --all-regions
-azguard resources --rules
-azguard resources --schema
-```
-
-AWS is scanned in the configured region unless you pass `--all-regions`. `--snapshot-days` defaults to 30. `--fail-over 25` exits **2** when the deduplicated estimated monthly total is greater than $25. A negative value (the default) disables that check.
-
-`safe_to_delete` means nothing is attached to the resource. It does not mean deletion is free of data loss. Read `safe_to_delete_hint`. Created-by is filled from Azure `systemData.createdBy` or an AWS `CreatedBy` / `Owner` tag when that value exists.
-
-Estimates use the Azure Retail Prices API and the AWS Price List API when those calls succeed, and a bundled list-price table otherwise (730 hours per month). `price_source` on each finding is `azure-retail`, `aws-price-list`, `bundled`, or `unpriced`. The figure is a list price, not an invoice. Two rules can match one resource (an idle Elastic IP is both `aws.eip.unassociated` and `aws.ipv4.public`); `total_estimated_monthly_usd` counts that resource once.
-
-### JSON schema (`azguard.findings.v1`)
-
-`azguard resources --output json` prints an object with `schema`, `schema_version`, `generated_at`, `findings`, `total_estimated_monthly_usd`, `currency`, and `errors`. Each finding has `resource_id`, `name`, `provider`, `region`, `rule_id`, `title`, `evidence`, `estimated_monthly_usd`, `currency`, `created_by`, `safe_to_delete`, `safe_to_delete_hint`, and `price_source`. `azguard resources --schema` prints the JSON Schema document.
-
-CSV columns are the finding fields above, in that order.
-
-### Rules
-
-| Rule | What it flags |
-|------|----------------|
-| `azure.disk.unattached` | Managed disk with `diskState` Unattached |
-| `azure.publicip.unassociated` | Public IP with no IP configuration |
-| `azure.nic.unattached` | NIC with no VM and no private endpoint |
-| `azure.vm.stopped_allocated` | VM power state Stopped (allocated), which is still billed. Deallocated VMs are not listed |
-| `azure.appserviceplan.empty` | App Service plan with zero sites |
-| `azure.snapshot.old` | Snapshot older than `--snapshot-days` |
-| `azure.natgateway.no_subnets` | NAT gateway with no subnets |
-| `azure.loganalytics.empty_ingestion` | Workspace with no solutions that is still ingesting data |
-| `aws.ebs.unattached` | EBS volume in `available` with no attachments |
-| `aws.eip.unassociated` | Elastic IP that is not associated |
-| `aws.ipv4.public` | Every public IPv4 address (charged whether or not it is attached) |
-| `aws.natgateway.idle` | NAT gateway with 0 `BytesOutToDestination` over 7 days |
-| `aws.vpcendpoint.interface` | Interface VPC endpoint (gateway endpoints are free and omitted) |
-| `aws.ec2.stopped_with_ebs` | Stopped instance that still has EBS attached |
-| `aws.elb.no_healthy_targets` | Load balancer with no healthy targets |
-| `aws.snapshot.old` | Snapshot older than `--snapshot-days` |
-
-### Read-only permissions
-
-Give the Azure subscription the built-in **Reader** role. The calls are:
-
-- `Microsoft.ResourceGraph/resources/read`
-- `Microsoft.Resources/subscriptions/resources/read`
-- `Microsoft.OperationalInsights/workspaces/usages/read`
-
-The Retail Prices API at `prices.azure.com` is public and does not use subscription credentials.
-
-On AWS, attach **ReadOnlyAccess**, or only these actions:
-
-- `ec2:DescribeVolumes`
-- `ec2:DescribeAddresses`
-- `ec2:DescribeNetworkInterfaces`
-- `ec2:DescribeNatGateways`
-- `ec2:DescribeVpcEndpoints`
-- `ec2:DescribeInstances`
-- `ec2:DescribeSnapshots`
-- `ec2:DescribeRegions`
-- `elasticloadbalancing:DescribeLoadBalancers`
-- `elasticloadbalancing:DescribeTargetGroups`
-- `elasticloadbalancing:DescribeTargetHealth`
-- `cloudwatch:GetMetricStatistics`
-- `pricing:GetProducts`
-
-Do not grant delete, terminate, release, stop, or deallocate permissions for `azguard resources`. Those permissions belong on `azguard cleanup` only.
-
-## Clean up forgotten resources
-
-`azguard cleanup` deletes resources that `azguard resources` already finds, on Azure and AWS. The default is a dry run. It prints the resource id, type, region, age, and estimated monthly cost, and it does not delete anything.
-
-```bash
-azguard cleanup
-azguard cleanup --cloud aws --region us-east-1 --type ebs --older-than 30d
-azguard cleanup --apply
-azguard cleanup --apply --yes --type disk --tag env=dev
-azguard cleanup --output json
-```
-
-Deletion runs only when you pass `--apply` and then type `yes` at the prompt. `--yes` skips the prompt for scripts. `--yes` without `--apply` still changes nothing.
-
-A resource tagged `azguard:keep=true` is never deleted, including with `--apply`, `--yes`, and `--include-unsafe`. The values `yes` and `1` are treated as protected too. If tags could not be loaded, the resource is skipped so the protection tag cannot be missed.
-
-By default only findings with `safe_to_delete` true are eligible. That means nothing is attached. Stopped VMs, old snapshots, idle NAT gateways, in-use public IPv4 addresses, load balancers, interface endpoints, and log analytics workspaces are skipped. `--include-unsafe` adds them. Deleting those can drop data or change connectivity. Read the hint before you confirm.
-
-`--older-than` takes a duration such as `720h` or `30d`. Resources younger than that, and resources whose age is unknown, are skipped. Elastic IP allocations do not have a create time in the describe API, so `--older-than` skips them. `--type` is a rule id (`azure.disk.unattached`) or a short name (`disk`, `ebs`, `eip`, `snapshot`, `nat`, `nic`, `plan`). Repeat `--type`, `--tag key=value`, and `--region`. `--tag` requires every listed tag. Matching is case-insensitive. `--cloud` is `all` (the default), `azure`, or `aws`. `--all-regions` scans every enabled AWS region. `--snapshot-days` defaults to 30 and is the age discovery uses to mark a snapshot as old, the same as `azguard resources`. `--output` is `table`, `json`, or `csv`.
-
-The summary counts resources that would be deleted, were deleted, were skipped, and failed. The command exits **1** when any delete fails, when discovery hits an error other than a cloud that is not configured, or when it finds nothing because every scanned cloud is not configured.
-
-Credentials are the same chain as the rest of azguard. Azure uses `az login`, a service principal, or managed identity. AWS uses the OS keychain (service name `azguard`), the environment (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`), or the AWS CLI credential chain (`aws configure export-credentials`, which includes profiles and SSO). See [Configuration](#configuration). This command does not write secrets.
-
-Azure accepts the delete and finishes it in the background (HTTP 202). A resource that is already gone is counted as deleted so a second run can succeed.
-
-An unassociated Elastic IP is also an `aws.ipv4.public` finding. Cleanup releases that allocation once. An auto-assigned public IPv4 address (no `eipalloc-` id) is not a separate resource, and cleanup skips it.
-
-### What cleanup can delete
-
-| Rule | Default | API |
-|------|---------|-----|
-| `azure.disk.unattached` | yes | ARM delete |
-| `azure.publicip.unassociated` | yes | ARM delete |
-| `azure.nic.unattached` | yes | ARM delete |
-| `azure.appserviceplan.empty` | yes | ARM delete |
-| `azure.natgateway.no_subnets` | yes | ARM delete |
-| `aws.ebs.unattached` | yes | `DeleteVolume` |
-| `aws.eip.unassociated` | yes | `ReleaseAddress` |
-| `aws.ipv4.public` | only an unassociated Elastic IP (`eipalloc-`) | `ReleaseAddress` |
-| `azure.vm.stopped_allocated` | `--include-unsafe` | ARM delete |
-| `azure.snapshot.old` | `--include-unsafe` | ARM delete |
-| `azure.loganalytics.empty_ingestion` | `--include-unsafe` | ARM delete |
-| `aws.natgateway.idle` | `--include-unsafe` | `DeleteNatGateway` |
-| `aws.vpcendpoint.interface` | `--include-unsafe` | `DeleteVpcEndpoints` |
-| `aws.ec2.stopped_with_ebs` | `--include-unsafe` | `TerminateInstances` |
-| `aws.snapshot.old` | `--include-unsafe` | `DeleteSnapshot` |
-| `aws.elb.no_healthy_targets` | `--include-unsafe` | `DeleteLoadBalancer` |
-| `aws.ipv4.public` on an in-use Elastic IP | `--include-unsafe` | `ReleaseAddress` |
-
-### Permissions
-
-`cleanup` needs the read permissions of `azguard resources`, plus permission to delete the types in the table.
-
-On Azure, delete on those resource types is enough (Contributor covers them). `azguard resources` stays read-only.
-
-On AWS, in addition to the describe actions:
-
-- `ec2:DeleteVolume`
-- `ec2:ReleaseAddress`
-- `ec2:DeleteNatGateway`
-- `ec2:DeleteVpcEndpoints`
-- `ec2:TerminateInstances`
-- `ec2:DeleteSnapshot`
-- `elasticloadbalancing:DeleteLoadBalancer`
-- `elasticloadbalancing:DescribeTags` (so `azguard:keep` can be read on load balancers)
-
-## Watch for new billable resources
-
-`azguard watch` polls on an interval (default **15 minutes**) for resource creates. It is not a live stream and it does not promise real-time alerts.
-
-Provider delay, checked against the published service behavior and **not measured on a live subscription in CI** (tests use recorded fixtures):
-
-- Azure Activity Log management events usually show up within a few minutes. Microsoft does not publish a hard delivery SLA for that feed.
-- AWS CloudTrail `LookupEvents` usually returns an event within about 15 minutes of the API call, and it can take longer.
-
-An alert arrives after that delay, on the next poll. With the default interval, expect on the order of the provider delay plus up to 15 minutes.
-
-```bash
-azguard watch
-azguard watch --once
-azguard watch --interval 15m --webhook "$AZGUARD_WEBHOOK"
-azguard watch --webhook-schema
-azguard watch --desktop=false
-```
-
-Each new event prints the principal and an estimated monthly list price from the bundled table (730 hours per month), not an invoice. A service principal, an app-only Azure token, an IAM access key, or an assumed role that is not IAM Identity Center (`AWSReservedSSO`) is marked as automation. A user UPN and an `AWSReservedSSO` role are not.
-
-Seen event IDs are stored in `~/.azguard/watch.json` (mode 0600). A failed webhook is not marked seen, so the next poll retries it. A missing desktop notifier is logged and does not stop the poll.
-
-### Webhook body
-
-`--webhook` POSTs JSON that Slack reads from `text` and Discord reads from `content`. Both fields are the same message. `username` is `azguard`. `attachments` follows Slack's attachment shape (orange `#e67e22` when any principal is automation, blue `#3498db` otherwise). Discord ignores `attachments` and displays `content`. `azguard watch --webhook-schema` prints the shape.
-
-### Read-only permissions
-
-`watch` only reads logs. It does not call the price-list APIs.
-
-Azure, in addition to the Reader role used by `resources`:
-
-- `Microsoft.Insights/eventtypes/values/read` (Activity Log management events)
-
-AWS:
-
-- `cloudtrail:LookupEvents`
-- `ec2:DescribeRegions` only when you pass `--all-regions`
-
-## Agent guard
-
-`azguard guard` recognizes billable commands (`az … create`, `aws … run-instances` and `create-*`, `terraform apply`, `pulumi up`, `cdk deploy`), prints an estimated monthly list price when the bundled table has one, and blocks the command when that estimate would put the session over `--budget`. A budget of 0 warns and allows. Read-only commands pass through. The wrapper exits **2** without running the command when it blocks. The estimate is reserved as soon as the command is allowed.
-
-`terraform apply`, `pulumi up`, and `cdk deploy` stay unpriced unless you pass `--plan`. The file may be:
-
-- `terraform show -json plan.out` (creates and replacements only; deletes are not subtracted)
-- `pulumi preview --json` (NDJSON engine events, or a `{"steps":[...]}` document)
-- a CDK synth template or CloudFormation JSON/YAML file (monthly run-rate of the billable types AzGuard knows, not a diff)
-- a CDK `manifest.json`; `templateFile` entries next to it are loaded
-
-The figure is the bundled list price (730 hours per month), not an invoice. A plan that contains a resource type without a bundled price does not block, because the total would be incomplete.
-
-```bash
-azguard guard --budget 25 -- aws ec2 run-instances --instance-type t3.micro
-terraform show -json tfplan > plan.json
-azguard guard --budget 25 --plan plan.json -- terraform apply tfplan
-azguard guard report --since 2026-10-17T12:00:00Z --principal casey@contoso.com
-azguard guard report --fixture activity.json
-azguard guard hook --budget 25
-```
-
-`azguard guard report` lists billable creates from the Activity Log and CloudTrail since the session started (or `--since`). `--fixture` reads a recorded page instead of the live APIs. `--principal` matches the display name, caller, UPN, or role ARN.
-
-Claude Code can call the same check as a `PreToolUse` hook. `azguard guard hook` reads the hook JSON on stdin and writes `hookSpecificOutput.permissionDecision` (`allow` or `deny`) plus a reason. It exits 0 so Claude Code reads the JSON. `azguard guard` with no command does the same thing.
-
-The session budget is `--budget` when you pass it. Otherwise `guard.budget_usd` in `~/.azguard/config.yaml` is used when it is greater than zero. A budget of 0 warns and allows.
-
-Add this to `.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": "azguard guard hook --budget 25" }]
-      }
-    ]
-  }
-}
-```
-
-The session file is `~/.azguard/guard-session.json`. Report permissions are the same read-only Activity Log and `cloudtrail:LookupEvents` permissions as `watch`.
-
-## MCP server
-
-`azguard mcp serve` speaks the Model Context Protocol on stdin and stdout. It is a prevention tool. It does not look up current spend, and it does not delete anything.
-
-Prices come from the bundled list-price table (730 hours per month). The figure is approximate and is not an invoice. Common rows include a NAT gateway at about $32.85/month, a public IPv4 address at about $3.65/month, and a `t3.micro` or `Standard_B1s` at about $7.59/month.
-
-```bash
-azguard mcp serve
-```
-
-Point an MCP client at that command. The server does not register itself in a public MCP registry.
-
-| Tool | Arguments | What it returns |
-|------|-----------|-----------------|
-| `list_idle_resources` | `cloud` optional: `all` (default), `azure`, or `aws` | Idle and orphaned findings from the same rules as `azguard resources` |
-| `list_new_billable_resources` | `since` (RFC3339, required), `principal` optional | Billable creates from the Activity Log and CloudTrail at or after `since` |
-| `check_free_or_credit_status` | `cloud` optional | Bundled free-tier limits and any credit stored by `azguard init`. Not live usage |
-| `estimate_monthly_cost` | `provider`, `kind`, optional `sku`, `quantity`, `region` | Approximate monthly price for one resource spec |
-| `preflight` | `input`, or `command` and `plan` | A sentence such as "this will create a NAT Gateway at about $32.85/month" |
-
-`preflight` accepts a `terraform show -json` plan, or a command string such as `az vm create` or `aws ec2 run-instances`. `plan` is used when `command` is `terraform apply`, `pulumi up`, or `cdk deploy`. Read-only commands are reported as not billable.
-
-`list_idle_resources` and `list_new_billable_resources` use the same read-only permissions as `azguard resources` and `azguard watch`. When credentials are missing, the tool says so and does not invent findings.
-
-`azguard preflight` prints the same estimate as JSON. The GitHub Action calls it.
-
-## GitHub Action
-
-The composite action at the repository root (`action.yml`) downloads an AzGuard release, runs `preflight` on a `terraform show -json` plan, and posts or updates one pull request comment. It fails the check when the approximate monthly total is greater than the `budget` input. Set `scan-idle` to `true` to add idle-resource findings when cloud credentials are already configured. A missing login is noted and does not fail the job by itself.
-
-The prices are the bundled table, not a full infrastructure estimate. For that, use [Infracost](https://www.infracost.io/).
-
-This action is not published to the GitHub Marketplace. Call it from a checkout of this repository, or from a ref you pin yourself. An example workflow is `examples/azguard.yml`. It is not an active workflow in this repo.
-
-The action downloads a published release. `version: latest` works after a release that includes `azguard preflight` is published.
-
-Log in with OIDC in your workflow before the AzGuard step if you want the idle scan. AzGuard does not perform the login.
-
-Azure, with [azure/login](https://github.com/azure/login): create a federated credential for the GitHub repository, then pass `client-id`, `tenant-id`, and `subscription-id`.
-
-AWS, with [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials): create an IAM role that trusts GitHub's OIDC provider, then pass `role-to-assume` and `aws-region`.
-
-The example pins those actions, and `actions/checkout`, to commit SHAs.
-
-## How It Works
-
-1. **Find** - `azguard resources` reads Azure Resource Graph and AWS describe APIs with read-only permissions
-2. **Clean up** - `azguard cleanup` prints that list as a dry run. Deletion runs only with `--apply` and a confirmation, and never for `azguard:keep=true`
-3. **Account and credit** - `azguard status` uses `az account show` when it can, and the credit fields from `azguard init` otherwise
-4. **Free-tier check** - `azguard scan` compares recorded cost with the bundled free-tier table
-
-## Budget Presets
-
-```bash
-$1   Strict budget - great for free tier testing
-$5   Small budget - light usage
-$10  Medium budget - moderate usage
-$20  Higher budget - warning before limit
-```
-
-## Use Cases
-
-- **Forgotten resources** - Disks, IPs, NAT gateways, and snapshots left behind by a script or an agent
-- **Agent sessions** - See automation principals in `azguard watch`, and block a billable command with `azguard guard`
-- **Free tier and credits** - Students, freelancers, and small teams who also need a local view of caps and leftover credit
-
-## Why azguard?
-
-azguard is one binary you run yourself. It finds resources that are easy to leave running, and it will not delete a protected tag. Free-tier and credit checks are included in the same CLI. It is not a billing portal and it does not replace the invoice.
-
-## Roadmap
-
-- [ ] Daily/weekly monitoring with notifications
-- [x] AWS free tier guard
-- [ ] GCP free tier guard
-- [ ] Slack/Teams notifications
-- [ ] Web dashboard
-
-## Contributing
-
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md).
+Azure uses `az login`, a service principal, or managed identity. AWS uses the OS keychain, the environment, or the AWS CLI credential chain (`aws configure export-credentials`, which includes profiles and SSO).
 
 ## License
 
@@ -490,4 +155,8 @@ MIT License - see [LICENSE](LICENSE).
 
 ## Support
 
+- Email: [support@azguard.dev](mailto:support@azguard.dev)
+- Website: [azguard.dev](https://azguard.dev)
 - [GitHub Issues](https://github.com/cdobratz/AzGuard/issues)
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) if you want to contribute.
