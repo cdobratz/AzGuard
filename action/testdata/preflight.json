@@ -1,0 +1,15 @@
+{
+  "format": "terraform",
+  "billable": true,
+  "priced": true,
+  "monthly_usd": 32.85,
+  "message": "this will create a NAT Gateway at about $32.85/month",
+  "note": "Approximate list price from AzGuard's bundled table (730 hours per month). This is not an invoice.",
+  "items": [
+    {
+      "label": "NAT Gateway",
+      "monthly_usd": 32.85,
+      "priced": true
+    }
+  ]
+}

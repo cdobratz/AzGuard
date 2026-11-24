@@ -1,0 +1,66 @@
+# Example only. This file is not an active workflow.
+# Copy it to .github/workflows/ in the repository you want to check.
+# Do not commit it as a workflow in AzGuard itself.
+#
+# AzGuard posts one pull request comment for billable resources in a Terraform
+# plan. The prices are approximate. For a full infrastructure estimate, use
+# Infracost: https://www.infracost.io/
+#
+# The action downloads a GitHub release. `version: latest` works after a
+# release that includes `azguard preflight` is published.
+#
+# Log in with OIDC before the AzGuard step when you want idle-resource findings.
+# AzGuard does not perform the login.
+#
+# Azure (azure/login): create a federated credential for this GitHub repository
+# on an app registration, then pass the client, tenant, and subscription ids.
+# https://github.com/azure/login
+#
+# AWS (aws-actions/configure-aws-credentials): create an IAM role that trusts
+# GitHub's OIDC provider, then pass role-to-assume.
+# https://github.com/aws-actions/configure-aws-credentials
+
+name: AzGuard plan check
+
+on:
+  pull_request:
+  schedule:
+    - cron: "0 12 * * 1"
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  azguard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805da76410c181273ba90b1 # v7.0.1
+
+      - name: Azure login
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: AWS login
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Terraform plan
+        run: |
+          terraform init
+          terraform plan -out=tfplan
+          terraform show -json tfplan > plan.json
+
+      - name: AzGuard
+        uses: ./  # this repository
+        with:
+          plan: plan.json
+          budget: "25"
+          scan-idle: "true"

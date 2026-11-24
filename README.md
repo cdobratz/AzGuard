@@ -86,6 +86,7 @@ azguard scan
 | `azguard watch` | Poll for new billable resources and alert |
 | `azguard guard` | Block billable commands that exceed a session budget |
 | `azguard mcp serve` | Stdio MCP server for prevention checks (idle resources, preflight, approximate prices) |
+| `azguard preflight` | Approximate monthly price of a Terraform plan or a cloud command |
 | `azguard status` | Spend, account type, and any credit stored by `azguard init` |
 | `azguard scan` | Compare recorded usage with Azure free-tier limits |
 | `azguard budget add [amount]` | Add a budget alert ($1-$100) |
@@ -424,6 +425,26 @@ Point an MCP client at that command. The server does not register itself in a pu
 `preflight` accepts a `terraform show -json` plan, or a command string such as `az vm create` or `aws ec2 run-instances`. `plan` is used when `command` is `terraform apply`, `pulumi up`, or `cdk deploy`. Read-only commands are reported as not billable.
 
 `list_idle_resources` and `list_new_billable_resources` use the same read-only permissions as `azguard resources` and `azguard watch`. When credentials are missing, the tool says so and does not invent findings.
+
+`azguard preflight` prints the same estimate as JSON. The GitHub Action calls it.
+
+## GitHub Action
+
+The composite action at the repository root (`action.yml`) downloads an AzGuard release, runs `preflight` on a `terraform show -json` plan, and posts or updates one pull request comment. It fails the check when the approximate monthly total is greater than the `budget` input. Set `scan-idle` to `true` to add idle-resource findings when cloud credentials are already configured. A missing login is noted and does not fail the job by itself.
+
+The prices are the bundled table, not a full infrastructure estimate. For that, use [Infracost](https://www.infracost.io/).
+
+This action is not published to the GitHub Marketplace. Call it from a checkout of this repository, or from a ref you pin yourself. An example workflow is `examples/azguard.yml`. It is not an active workflow in this repo.
+
+The action downloads a published release. `version: latest` works after a release that includes `azguard preflight` is published.
+
+Log in with OIDC in your workflow before the AzGuard step if you want the idle scan. AzGuard does not perform the login.
+
+Azure, with [azure/login](https://github.com/azure/login): create a federated credential for the GitHub repository, then pass `client-id`, `tenant-id`, and `subscription-id`.
+
+AWS, with [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials): create an IAM role that trusts GitHub's OIDC provider, then pass `role-to-assume` and `aws-region`.
+
+The example pins those actions, and `actions/checkout`, to commit SHAs.
 
 ## How It Works
 
