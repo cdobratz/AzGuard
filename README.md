@@ -108,7 +108,7 @@ azguard scan
 
 ### Scoop (Windows)
 
-The bucket is [cdobratz/scoop-azguard](https://github.com/cdobratz/scoop-azguard). The manifest is `bucket/azguard.json`, and the app name is `azguard`.
+The bucket is [cdobratz/scoop-azguard](https://github.com/cdobratz/scoop-azguard). The manifest is `bucket/azguard.json`, and the app name is `azguard`. A tagged release updates that manifest. See [UPDATE.md](UPDATE.md).
 
 ```powershell
 scoop bucket add azguard https://github.com/cdobratz/scoop-azguard
@@ -117,7 +117,7 @@ scoop install azguard
 
 ### Homebrew (macOS and Linux)
 
-The tap is [cdobratz/homebrew-azguard](https://github.com/cdobratz/homebrew-azguard). The formula is `Formula/azguard.rb`.
+The tap is [cdobratz/homebrew-azguard](https://github.com/cdobratz/homebrew-azguard). The formula is `Formula/azguard.rb`. A tagged release updates that formula. See [UPDATE.md](UPDATE.md).
 
 ```bash
 brew install cdobratz/azguard/azguard

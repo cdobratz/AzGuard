@@ -19,7 +19,7 @@ The CLI is local. It does not host your account and it has no paid tier.
 
 ### Scoop (Windows)
 
-The bucket name is `azguard`. The manifest lives in `cdobratz/scoop-azguard` (`bucket/azguard.json`), not in this repository.
+The bucket name is `azguard`. The manifest lives in `cdobratz/scoop-azguard` (`bucket/azguard.json`), not in this repository. A tagged release updates that manifest. See [UPDATE.md](UPDATE.md).
 
 ```powershell
 scoop bucket add azguard https://github.com/cdobratz/scoop-azguard
@@ -28,7 +28,7 @@ scoop install azguard
 
 ### Homebrew (macOS and Linux)
 
-The tap is `cdobratz/azguard` and the formula is `azguard` (`Formula/azguard.rb` in `cdobratz/homebrew-azguard`).
+The tap is `cdobratz/azguard` and the formula is `azguard` (`Formula/azguard.rb` in `cdobratz/homebrew-azguard`). A tagged release updates that formula. See [UPDATE.md](UPDATE.md).
 
 ```bash
 brew install cdobratz/azguard/azguard
