@@ -163,6 +163,7 @@ azguard watch --webhook "$AZGUARD_WEBHOOK"
 
 # Block a billable command when the session budget is exceeded (exit 2)
 azguard guard --budget 25 -- aws ec2 run-instances --instance-type t3.micro
+azguard guard hook --budget 25
 azguard guard report --fixture activity.json
 
 # Stdio MCP server for prevention checks (idle resources, preflight, approximate prices)
@@ -185,6 +186,29 @@ azguard config list
 
 # Set config
 azguard config set subscription YOUR_SUB_ID
+```
+
+### Agent guard hook
+
+`azguard guard -- <command>` runs the command only when the session budget allows it. `azguard guard hook` reads a Claude Code PreToolUse payload on stdin and prints `permissionDecision` `allow` or `deny`. Read-only commands pass through. Billable commands (`az ... create`, `aws ... run-instances`, `aws ... create-*`, `terraform apply`, `pulumi up`, `cdk deploy`) show an estimated monthly cost and are blocked when the session budget is exceeded.
+
+The budget is `--budget`, or `guard.budget_usd` in `~/.azguard/config.yaml` when the flag is omitted and the config value is greater than zero.
+
+`azguard guard report --fixture activity.json` lists creates from a recorded Activity Log or CloudTrail page. It does not call the cloud.
+
+Sample `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "azguard guard hook --budget 25" }]
+      }
+    ]
+  }
+}
 ```
 
 ### MCP server

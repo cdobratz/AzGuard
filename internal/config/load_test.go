@@ -20,7 +20,7 @@ func TestLoadExpandsPathsAndReadsAccount(t *testing.T) {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	body := []byte("azure:\n  auth_method: cli\n  subscription_id: 11111111-1111-1111-1111-111111111111\nstorage:\n  path: ~/data.db\naccount:\n  azure: free\n  azure_credit_remaining: \"40\"\n")
+	body := []byte("azure:\n  auth_method: cli\n  subscription_id: 11111111-1111-1111-1111-111111111111\nstorage:\n  path: ~/data.db\naccount:\n  azure: free\n  azure_credit_remaining: \"40\"\nguard:\n  budget_usd: 25\n")
 	if err := os.WriteFile(filepath.Join(dir, "config.yaml"), body, 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -36,6 +36,9 @@ func TestLoadExpandsPathsAndReadsAccount(t *testing.T) {
 	}
 	if cfg.Account.Azure != "free" || cfg.Account.AzureCreditRemaining != "40" {
 		t.Fatalf("account %+v", cfg.Account)
+	}
+	if cfg.Guard.BudgetUSD != 25 {
+		t.Fatalf("guard budget %+v", cfg.Guard)
 	}
 	if Get().Azure.AuthMethod != "cli" {
 		t.Fatalf("get %+v", Get())

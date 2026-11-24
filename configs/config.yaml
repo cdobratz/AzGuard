@@ -16,6 +16,11 @@ gcp:
 storage:
   path: ~/.azguard/data.db
 
+# Session budget for azguard guard, in USD per month.
+# --budget overrides this. 0 warns and allows.
+guard:
+  budget_usd: 0
+
 # azguard init writes this section. It is not a secret.
 account:
   azure: ""
