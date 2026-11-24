@@ -15,6 +15,13 @@ type Config struct {
 	GCP     GCPConfig     `mapstructure:"gcp"`
 	Storage StorageConfig `mapstructure:"storage"`
 	Account AccountConfig `mapstructure:"account"`
+	Guard   GuardConfig   `mapstructure:"guard"`
+}
+
+// GuardConfig is the session budget for azguard guard.
+// BudgetUSD is USD per month. Zero means warn and allow.
+type GuardConfig struct {
+	BudgetUSD float64 `mapstructure:"budget_usd"`
 }
 
 type AzureConfig struct {

@@ -160,6 +160,9 @@ aws:
 
 storage:
   path: ~/.azguard/data.db
+
+guard:
+  budget_usd: 25  # optional session budget for azguard guard. --budget overrides this.
 ```
 
 Cloud secrets are read from the environment (`AZURE_CLIENT_SECRET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`) or from the OS keychain (service name `azguard`). If a config file still has those fields, the next start copies them into the keychain and removes them from the file. When the keychain is unavailable, the file is left as it is.
@@ -372,11 +375,16 @@ terraform show -json tfplan > plan.json
 azguard guard --budget 25 --plan plan.json -- terraform apply tfplan
 azguard guard report --since 2026-10-17T12:00:00Z --principal casey@contoso.com
 azguard guard report --fixture activity.json
+azguard guard hook --budget 25
 ```
 
 `azguard guard report` lists billable creates from the Activity Log and CloudTrail since the session started (or `--since`). `--fixture` reads a recorded page instead of the live APIs. `--principal` matches the display name, caller, UPN, or role ARN.
 
-Claude Code can call the same check as a `PreToolUse` hook. The hook writes `hookSpecificOutput.permissionDecision` (`allow` or `deny`) and a reason, and exits 0 so Claude Code reads the JSON. Add this to `.claude/settings.json`:
+Claude Code can call the same check as a `PreToolUse` hook. `azguard guard hook` reads the hook JSON on stdin and writes `hookSpecificOutput.permissionDecision` (`allow` or `deny`) plus a reason. It exits 0 so Claude Code reads the JSON. `azguard guard` with no command does the same thing.
+
+The session budget is `--budget` when you pass it. Otherwise `guard.budget_usd` in `~/.azguard/config.yaml` is used when it is greater than zero. A budget of 0 warns and allows.
+
+Add this to `.claude/settings.json`:
 
 ```json
 {
@@ -384,7 +392,7 @@ Claude Code can call the same check as a `PreToolUse` hook. The hook writes `hoo
     "PreToolUse": [
       {
         "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": "azguard guard --budget 25" }]
+        "hooks": [{ "type": "command", "command": "azguard guard hook --budget 25" }]
       }
     ]
   }

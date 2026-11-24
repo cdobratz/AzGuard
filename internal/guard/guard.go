@@ -11,9 +11,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cdobratz/azguard/internal/iac"
+	"github.com/cdobratz/azguard/internal/preflight"
 	"github.com/cdobratz/azguard/internal/pricing"
 )
+
+// Classification is the cost guess for one shell command.
+type Classification struct {
+	Billable bool
+	Priced   bool
+	USD      float64
+	Summary  string
+}
 
 // Options controls one guard decision.
 type Options struct {
@@ -71,56 +79,19 @@ func DecidePlan(command string, spent, budget float64, plan []byte) (Decision, e
 }
 
 func classification(command string, plan []byte) (Classification, error) {
-	c := Classify(command)
-	if len(bytes.TrimSpace(plan)) == 0 || !IsIaC(command) {
-		return c, nil
+	if strings.TrimSpace(command) == "" && len(bytes.TrimSpace(plan)) == 0 {
+		return Classification{}, nil
 	}
-	est, err := iac.Parse(plan, pricing.Bundled())
+	res, err := preflight.InspectWithPlan(command, plan)
 	if err != nil {
 		return Classification{}, err
 	}
-	notes := dropIaCNotes(c.Summary)
-	onlyIaC := len(notes) == 0
-	c.Summary = strings.Join(notes, "; ")
-	if !est.Complete {
-		c.Billable = true
-		c.Priced = false
-		c.Summary = joinNonEmpty(c.Summary, "plan has resources without a bundled price")
-		return c, nil
-	}
-	c.Billable = true
-	c.USD = pricing.RoundUSD(c.USD + est.MonthlyUSD)
-	c.Summary = joinNonEmpty(c.Summary, est.Format+" plan")
-	if onlyIaC {
-		c.Priced = true
-	}
-	return c, nil
-}
-
-func dropIaCNotes(summary string) []string {
-	if summary == "" {
-		return nil
-	}
-	var notes []string
-	for _, part := range strings.Split(summary, "; ") {
-		switch part {
-		case "terraform apply", "pulumi up", "cdk deploy":
-			continue
-		default:
-			notes = append(notes, part)
-		}
-	}
-	return notes
-}
-
-func joinNonEmpty(a, b string) string {
-	if a == "" {
-		return b
-	}
-	if b == "" {
-		return a
-	}
-	return a + "; " + b
+	return Classification{
+		Billable: res.Billable,
+		Priced:   res.Priced,
+		USD:      res.MonthlyUSD,
+		Summary:  res.Summary,
+	}, nil
 }
 
 func decideClass(c Classification, spent, budget float64) Decision {

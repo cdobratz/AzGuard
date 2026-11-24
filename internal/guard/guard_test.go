@@ -10,6 +10,13 @@ import (
 	"time"
 )
 
+func TestDecideEmptyIsNotBillable(t *testing.T) {
+	d := Decide("   ", 0, 1)
+	if !d.Allow || d.Billable {
+		t.Fatalf("%+v", d)
+	}
+}
+
 func TestDecideBlocksRunInstancesOverBudget(t *testing.T) {
 	d := Decide("aws ec2 run-instances --instance-type t3.micro", 0, 5)
 	if d.Allow {

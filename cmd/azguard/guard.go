@@ -24,13 +24,16 @@ func guardCmd() *cobra.Command {
 		Short: "Block billable cloud commands over a session budget",
 		Long: `Recognize billable cloud commands and block them when a session budget is exceeded.
 
-With no command, guard reads a Claude Code PreToolUse hook payload on stdin and writes
-hookSpecificOutput JSON on stdout. The process exits 0 so Claude Code can read a deny decision.
-
   azguard guard --budget 25 -- aws ec2 run-instances --instance-type t3.micro
+  azguard guard hook --budget 25
   azguard guard report --fixture activity.json
 
-A budget of 0 (the default) prints the estimate and allows the command.
+azguard guard hook reads a Claude Code PreToolUse payload on stdin and writes
+hookSpecificOutput JSON on stdout. With no subcommand and no command, guard does
+the same thing. The process exits 0 so Claude Code can read a deny decision.
+
+The budget is --budget when that flag is set. Otherwise it is guard.budget_usd
+in the config file. A budget of 0 prints the estimate and allows the command.
 Read-only commands (describe, list, show, terraform plan, pulumi preview, cdk diff) pass through.
 terraform apply, pulumi up, and cdk deploy are billable. Pass --plan with a terraform show -json
 plan, Pulumi preview JSON, or a CDK synth / CloudFormation template to price them from the bundled
@@ -45,7 +48,7 @@ Claude Code settings snippet (.claude/settings.json):
       "PreToolUse": [
         {
           "matcher": "Bash",
-          "hooks": [{ "type": "command", "command": "azguard guard --budget 25" }]
+          "hooks": [{ "type": "command", "command": "azguard guard hook --budget 25" }]
         }
       ]
     }
@@ -54,26 +57,87 @@ Claude Code settings snippet (.claude/settings.json):
 		SilenceErrors: true,
 		Args:          cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var plan []byte
-			if planPath != "" {
-				body, err := os.ReadFile(planPath)
-				if err != nil {
-					return err
-				}
-				plan = body
-			}
-			opts := guard.Options{BudgetUSD: budget, Path: guardSessionPath(sessionPath), Plan: plan}
-			if len(args) > 0 {
-				return guard.RunCommand(args, opts)
-			}
-			return guard.RunHook(os.Stdin, cmd.OutOrStdout(), opts)
+			return runGuard(cmd, args, budget, sessionPath, planPath)
 		},
 	}
-	cmd.PersistentFlags().Float64Var(&budget, "budget", 0, "Session budget in USD per month. 0 warns and allows")
+	cmd.PersistentFlags().Float64Var(&budget, "budget", 0, "Session budget in USD per month. 0 warns and allows. Overrides guard.budget_usd")
 	cmd.PersistentFlags().StringVar(&sessionPath, "session", "", "Session file (default: ~/.azguard/guard-session.json)")
 	cmd.PersistentFlags().StringVar(&planPath, "plan", "", "terraform show -json, Pulumi preview JSON, or CDK/CloudFormation template")
 	cmd.AddCommand(guardReportCmd(&sessionPath))
+	cmd.AddCommand(&cobra.Command{
+		Use:   "hook",
+		Short: "Read a Claude Code PreToolUse payload and allow or block it",
+		Long: `Read a Claude Code PreToolUse JSON payload on stdin and write the allow or deny
+decision on stdout. The process exits 0 so Claude Code can read the JSON.
+
+  azguard guard hook --budget 25
+
+Billable commands (az ... create, aws ... run-instances, aws ... create-*, terraform apply,
+pulumi up, cdk deploy) include an estimated monthly cost. The command is denied when that
+estimate would exceed the session budget. Read-only commands are allowed.
+
+Add this to .claude/settings.json:
+
+  {
+    "hooks": {
+      "PreToolUse": [
+        {
+          "matcher": "Bash",
+          "hooks": [{ "type": "command", "command": "azguard guard hook --budget 25" }]
+        }
+      ]
+    }
+  }`,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		Args:          cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runGuard(cmd, nil, budget, sessionPath, planPath)
+		},
+	})
 	return cmd
+}
+
+func runGuard(cmd *cobra.Command, args []string, budget float64, sessionPath, planPath string) error {
+	budget = resolveGuardBudget(cmd, budget)
+	var plan []byte
+	if planPath != "" {
+		body, err := os.ReadFile(planPath)
+		if err != nil {
+			return err
+		}
+		plan = body
+	}
+	opts := guard.Options{BudgetUSD: budget, Path: guardSessionPath(sessionPath), Plan: plan}
+	if len(args) > 0 {
+		return guard.RunCommand(args, opts)
+	}
+	in := cmd.InOrStdin()
+	if in == nil {
+		in = os.Stdin
+	}
+	return guard.RunHook(in, cmd.OutOrStdout(), opts)
+}
+
+// resolveGuardBudget uses --budget when the flag was set. Otherwise it uses
+// guard.budget_usd from config when that value is greater than zero.
+func resolveGuardBudget(cmd *cobra.Command, flag float64) float64 {
+	if guardBudgetFlagSet(cmd) {
+		return flag
+	}
+	if cfg != nil && cfg.Guard.BudgetUSD > 0 {
+		return cfg.Guard.BudgetUSD
+	}
+	return flag
+}
+
+func guardBudgetFlagSet(cmd *cobra.Command) bool {
+	for c := cmd; c != nil; c = c.Parent() {
+		if c.Flags().Changed("budget") {
+			return true
+		}
+	}
+	return false
 }
 
 func guardReportCmd(sessionPath *string) *cobra.Command {
