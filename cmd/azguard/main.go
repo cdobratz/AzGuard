@@ -107,6 +107,7 @@ Examples:
 	rootCmd.AddCommand(configCmd())
 	rootCmd.AddCommand(costCmd())
 	rootCmd.AddCommand(awsCmd())
+	rootCmd.AddCommand(mcpCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

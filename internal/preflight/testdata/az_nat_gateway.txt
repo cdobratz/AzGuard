@@ -1,0 +1,1 @@
+az network nat gateway create -g rg -n nat
