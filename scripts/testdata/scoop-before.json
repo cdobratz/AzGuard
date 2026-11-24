@@ -1,0 +1,30 @@
+{
+  "version": "1.1.0",
+  "description": "One command to make sure your Azure and AWS free tiers don't surprise you with a bill",
+  "homepage": "https://github.com/cdobratz/AzGuard",
+  "license": "MIT",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/cdobratz/AzGuard/releases/download/v1.1.0/azguard_1.1.0_windows_amd64.zip",
+      "hash": "sha256:9841e166ee52806f66b07ef7731260dbe6153a4cfb85c0432a0de0ab95a28f18"
+    },
+    "arm64": {
+      "url": "https://github.com/cdobratz/AzGuard/releases/download/v1.1.0/azguard_1.1.0_windows_arm64.zip",
+      "hash": "sha256:4213660a61925cde014b07197e9be3c9d26b935824f2479c610b88cfaf3a7095"
+    }
+  },
+  "bin": "azguard.exe",
+  "checkver": {
+    "github": "https://github.com/cdobratz/AzGuard"
+  },
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/cdobratz/AzGuard/releases/download/v$version/azguard_$version_windows_amd64.zip"
+      },
+      "arm64": {
+        "url": "https://github.com/cdobratz/AzGuard/releases/download/v$version/azguard_$version_windows_arm64.zip"
+      }
+    }
+  }
+}

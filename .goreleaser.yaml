@@ -1,5 +1,6 @@
 # .goreleaser.yaml
 # Build configuration for azguard
+version: 2
 
 project_name: azguard
 
@@ -24,10 +25,10 @@ builds:
 
 archives:
   - id: default
-    format: zip
+    formats: zip
     format_overrides:
       - goos: linux
-        format: tar.gz
+        formats: tar.gz
     files:
       - LICENSE
       - configs/*
@@ -36,7 +37,7 @@ checksum:
   name_template: 'checksums.txt'
 
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  version_template: "{{ .Tag }}-next"
 
 changelog:
   filters:
@@ -51,3 +52,22 @@ release:
     name: AzGuard
   draft: false
   prerelease: auto
+
+# Homebrew Formula/azguard.rb is updated by scripts/package-repos.sh after
+# this release, not by GoReleaser. brews is deprecated and a cask would
+# replace the formula people already install.
+scoops:
+  - name: azguard
+    directory: bucket
+    homepage: https://azguard.dev
+    description: Find and clean up forgotten and AI-agent-created cloud resources on Azure and AWS.
+    license: MIT
+    commit_author:
+      name: azguard-releaser
+      email: noreply@azguard.dev
+    repository:
+      owner: cdobratz
+      name: scoop-azguard
+      branch: master
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    skip_upload: '{{ if index .Env "TAP_GITHUB_TOKEN" }}false{{ else }}true{{ end }}'
