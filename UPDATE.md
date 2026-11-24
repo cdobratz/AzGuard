@@ -1,266 +1,74 @@
 # Package Manager Update Guide
 
-This guide explains how to update azguard in Scoop and Homebrew after releasing a new version.
+Tagged releases update the Scoop bucket and the Homebrew tap. GoReleaser writes `bucket/azguard.json` in `cdobratz/scoop-azguard` (branch `master`) and `Casks/azguard.rb` in `cdobratz/homebrew-azguard` (branch `main`). Those files are not stored in this repository.
 
-## Overview
+## Actions secret
 
-When a new version of azguard is released, you need to update two package manager repositories:
-1. **Scoop bucket** (scoop-azguard) - For Windows users
-2. **Homebrew tap** (homebrew-azguard) - For macOS and Linux users
+Create a fine-grained personal access token that can only access `cdobratz/homebrew-azguard` and `cdobratz/scoop-azguard`. Grant Contents read and write on those two repositories. Save it as the Actions secret `TAP_GITHUB_TOKEN` on `cdobratz/AzGuard`.
 
-This CLI repository does not contain those manifests. Edit `bucket/azguard.json` only in `cdobratz/scoop-azguard`, and edit `Formula/azguard.rb` only in `cdobratz/homebrew-azguard`. GoReleaser does not write either file.
+The Release workflow passes that secret to GoReleaser. If the secret is missing or empty, GoReleaser still publishes the GitHub release binaries and skips the tap and bucket commits.
 
-## Prerequisites
+## v1.2.0 is already published
 
-- New release published on GitHub with binaries (done automatically by GoReleaser)
-- Access to the scoop-azguard and homebrew-azguard repositories
+The taps update on the next tag, after this change is on `main` and the secret is set. Do not re-run the v1.2.0 Release workflow.
 
-## Release Process
+A re-run is not a way to refresh the taps. GitHub Actions runs the workflow file from the tag commit, and v1.2.0 does not contain this GoReleaser config or `TAP_GITHUB_TOKEN`. The v1.2.0 GitHub release also already has its assets. This config leaves `release.replace_existing_artifacts` unset, so a re-run that did build those same asset names would fail with GitHub's `422 already_exists` and would stop before any tap commit. `release.mode` only controls release notes (the default is `keep-existing`). It does not replace assets and it does not make a re-run safe.
 
-### 1. Create a New Release
+## What the release writes
 
-The release process is automated via GitHub Actions:
+Scoop manifest name and path stay `bucket/azguard.json`. The app name stays `azguard`, the binary stays `azguard.exe`, the license stays MIT, and the homepage is `https://azguard.dev`. GoReleaser puts `bin` on each architecture entry and writes the url and hash itself. It does not write `checkver` or `autoupdate`. `scoop update` still sees a new version because the manifest `version` in the bucket git repo changes.
+
+Homebrew keeps the name `azguard`. Current GoReleaser publishes a cask, not a formula, so the file is `Casks/azguard.rb` rather than `Formula/azguard.rb`. The cask installs the same `azguard` binary (`binary "azguard"`, the same role as the formula's `bin.install "azguard"`). The first release that includes this config adds the cask and does not delete `Formula/azguard.rb`. While both exist, `brew install cdobratz/azguard/azguard` still installs the old formula.
+
+After that release succeeds, in `cdobratz/homebrew-azguard` add `tap_migrations.json` at the repository root:
+
+```json
+{
+  "azguard": "azguard"
+}
+```
+
+Then delete `Formula/azguard.rb`. Homebrew uses that file to move an existing formula install onto the cask during `brew upgrade`. New installs then use:
 
 ```bash
-# Tag the new version
-git tag -a v1.0.x -m "Release v1.0.x - Description"
+brew install --cask cdobratz/azguard/azguard
+```
 
-# Push the tag (this triggers GoReleaser)
+The cask has no `license` line. Homebrew casks do not support that stanza, so GoReleaser accepts `license: MIT` and does not write it. The tap's MIT `LICENSE` file is unchanged. The cask also has no formula `test` block. On macOS it clears the quarantine bit on the unsigned binary during install, which is what lets the binary run.
+
+## Release process
+
+```bash
+git tag -a v1.0.x -m "Release v1.0.x - Description"
 git push origin v1.0.x
 ```
 
-GoReleaser will:
-- Build binaries for all platforms (Windows, macOS, Linux)
-- Generate checksums.txt
-- Create a GitHub release
+GoReleaser builds the archives, writes `checksums.txt`, publishes the GitHub release, and commits the cask and the Scoop manifest when `TAP_GITHUB_TOKEN` is set. Commit author is `azguard-releaser <noreply@azguard.dev>`.
 
-### 2. Get the Checksums
+## Manual fallback
 
-After the release completes, download the checksums:
-
-```bash
-curl -sL https://github.com/cdobratz/AzGuard/releases/download/vX.Y.Z/checksums.txt
-```
-
-You'll see output like:
-```
-<hash>  azguard_X.Y.Z_darwin_amd64.zip
-<hash>  azguard_X.Y.Z_darwin_arm64.zip
-<hash>  azguard_X.Y.Z_linux_amd64.tar.gz
-<hash>  azguard_X.Y.Z_linux_arm64.tar.gz
-<hash>  azguard_X.Y.Z_windows_amd64.zip
-<hash>  azguard_X.Y.Z_windows_arm64.zip
-```
-
-## Update Scoop Bucket
-
-### Location
-Repository: https://github.com/cdobratz/scoop-azguard  
-File: `bucket/azguard.json`
-
-### Steps
-
-1. **Clone/pull the repository:**
-   ```bash
-   git clone https://github.com/cdobratz/scoop-azguard.git
-   cd scoop-azguard
-   ```
-
-2. **Update the manifest:**
-   Edit `bucket/azguard.json` and update:
-   - `version` field
-   - `url` in the 64bit architecture section
-   - `hash` with the SHA256 from checksums.txt (windows_amd64)
-
-   ```json
-   {
-     "version": "X.Y.Z",
-     "description": "...",
-     "homepage": "...",
-     "license": "MIT",
-     "architecture": {
-       "64bit": {
-         "url": "https://github.com/cdobratz/AzGuard/releases/download/vX.Y.Z/azguard_X.Y.Z_windows_amd64.zip",
-         "hash": "sha256:<WINDOWS_AMD64_HASH>"
-       }
-     },
-     ...
-   }
-   ```
-
-3. **Commit and push:**
-   ```bash
-   git add bucket/azguard.json
-   git commit -m "Update azguard to vX.Y.Z"
-   git push origin master
-   ```
-
-### Testing Scoop Update
-
-Windows users can now update:
-```powershell
-scoop update azguard
-```
-
-## Update Homebrew Tap
-
-### Location
-Repository: https://github.com/cdobratz/homebrew-azguard  
-File: `Formula/azguard.rb`
-
-### Steps
-
-1. **Clone/pull the repository:**
-   ```bash
-   git clone https://github.com/cdobratz/homebrew-azguard.git
-   cd homebrew-azguard
-   ```
-
-2. **Update the formula:**
-   Edit `Formula/azguard.rb` and update ALL of the following:
-   - `version` field
-   - URLs for all platforms (darwin_arm64, darwin_amd64, linux_arm64, linux_amd64)
-   - SHA256 hashes for all platforms
-
-   ```ruby
-   class Azguard < Formula
-     desc "One command to make sure your Azure free tier doesn't surprise you with a bill"
-     homepage "https://github.com/cdobratz/AzGuard"
-     license "MIT"
-     version "X.Y.Z"
-
-     on_macos do
-       if Hardware::CPU.arm?
-         url "https://github.com/cdobratz/AzGuard/releases/download/vX.Y.Z/azguard_X.Y.Z_darwin_arm64.zip"
-         sha256 "<DARWIN_ARM64_HASH>"
-       else
-         url "https://github.com/cdobratz/AzGuard/releases/download/vX.Y.Z/azguard_X.Y.Z_darwin_amd64.zip"
-         sha256 "<DARWIN_AMD64_HASH>"
-       end
-     end
-
-     on_linux do
-       if Hardware::CPU.arm?
-         url "https://github.com/cdobratz/AzGuard/releases/download/vX.Y.Z/azguard_X.Y.Z_linux_arm64.tar.gz"
-         sha256 "<LINUX_ARM64_HASH>"
-       else
-         url "https://github.com/cdobratz/AzGuard/releases/download/vX.Y.Z/azguard_X.Y.Z_linux_amd64.tar.gz"
-         sha256 "<LINUX_AMD64_HASH>"
-       end
-     end
-
-     def install
-       bin.install "azguard"
-     end
-
-     test do
-       system "#{bin}/azguard", "--version"
-     end
-   end
-   ```
-
-3. **Commit and push:**
-   ```bash
-   git add Formula/azguard.rb
-   git commit -m "Update azguard to vX.Y.Z"
-   git push origin main
-   ```
-
-### Testing Homebrew Update
-
-macOS and Linux users can now update:
-```bash
-brew update
-brew upgrade azguard
-```
-
-## Quick Reference Script
-
-Here's a complete script to update both package managers:
-
-```bash
-#!/bin/bash
-VERSION="1.0.4"  # Update this
-TAG="v${VERSION}"
-
-# Get checksums
-echo "Fetching checksums for ${TAG}..."
-CHECKSUMS=$(curl -sL "https://github.com/cdobratz/AzGuard/releases/download/${TAG}/checksums.txt")
-
-# Extract individual hashes
-DARWIN_AMD64=$(echo "$CHECKSUMS" | grep darwin_amd64 | awk '{print $1}')
-DARWIN_ARM64=$(echo "$CHECKSUMS" | grep darwin_arm64 | awk '{print $1}')
-LINUX_AMD64=$(echo "$CHECKSUMS" | grep linux_amd64 | awk '{print $1}')
-LINUX_ARM64=$(echo "$CHECKSUMS" | grep linux_arm64 | awk '{print $1}')
-WINDOWS_AMD64=$(echo "$CHECKSUMS" | grep windows_amd64 | awk '{print $1}')
-
-echo "Darwin amd64:  $DARWIN_AMD64"
-echo "Darwin arm64:  $DARWIN_ARM64"
-echo "Linux amd64:   $LINUX_AMD64"
-echo "Linux arm64:   $LINUX_ARM64"
-echo "Windows amd64: $WINDOWS_AMD64"
-
-# Update Scoop
-echo -e "\nUpdate Scoop manifest at: scoop-azguard/bucket/azguard.json"
-echo "  - version: ${VERSION}"
-echo "  - url: ...${TAG}/azguard_${VERSION}_windows_amd64.zip"
-echo "  - hash: sha256:${WINDOWS_AMD64}"
-
-# Update Homebrew
-echo -e "\nUpdate Homebrew formula at: homebrew-azguard/Formula/azguard.rb"
-echo "  - version: ${VERSION}"
-echo "  - darwin_arm64 hash: ${DARWIN_ARM64}"
-echo "  - darwin_amd64 hash: ${DARWIN_AMD64}"
-echo "  - linux_arm64 hash:  ${LINUX_ARM64}"
-echo "  - linux_amd64 hash:  ${LINUX_AMD64}"
-```
+Use this only when the secret was missing and the release published binaries without updating the taps. Download `checksums.txt` for that tag and edit `bucket/azguard.json` in `cdobratz/scoop-azguard` and `Casks/azguard.rb` in `cdobratz/homebrew-azguard` so the urls and hashes match the release. Push `master` for Scoop and `main` for Homebrew.
 
 ## Verification
 
-After updating both package managers, verify users can install/update:
-
 ### Scoop (Windows)
+
 ```powershell
 scoop update
 scoop update azguard
 azguard --version
 ```
 
-### Homebrew (macOS/Linux)
+### Homebrew (macOS and Linux)
+
 ```bash
 brew update
-brew upgrade azguard
+brew upgrade --cask azguard
 azguard --version
 ```
 
-Both should show the new version number.
+Until `Formula/azguard.rb` is removed, `brew upgrade azguard` still follows the formula.
 
-## Troubleshooting
+### Wrong hash
 
-### Wrong Hash Error
-- **Scoop**: "Hash check failed"
-- **Homebrew**: "SHA256 mismatch"
-
-**Solution**: Double-check you copied the correct hash from checksums.txt for the right platform/architecture.
-
-### Old Version Still Installing
-- **Scoop**: Run `scoop cache rm azguard` then `scoop update azguard`
-- **Homebrew**: Run `brew update` to refresh the tap, then `brew upgrade azguard`
-
-### Formula/Manifest Syntax Error
-- Validate JSON for Scoop: Use a JSON linter
-- Validate Ruby for Homebrew: Run `brew audit --strict azguard`
-
-## Automation Opportunities
-
-Consider automating this process with:
-1. GitHub Actions workflow that triggers on new releases
-2. Script that automatically updates both repositories
-3. Bot that creates PRs to package manager repos
-
-## Notes
-
-- Always update both Scoop and Homebrew together to keep versions in sync
-- Test on at least one platform before pushing
-- Include release notes in commit messages
-- The autoupdate section in Scoop manifest helps users get notified of updates
+Scoop reports "Hash check failed". Homebrew reports "SHA256 mismatch". Copy the hash from `checksums.txt` for that platform. For Scoop, `scoop cache rm azguard` then `scoop update azguard`. For Homebrew, `brew update` then upgrade again.
