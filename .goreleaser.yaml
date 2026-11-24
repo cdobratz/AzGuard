@@ -53,39 +53,9 @@ release:
   draft: false
   prerelease: auto
 
-# homebrew_casks, not brews. GoReleaser v2 deprecated brews in v2.10 and
-# fully deprecated it in v2.16. goreleaser check exits 2 while brews is set.
-# The release action installs ~> v2. Casks are the supported way to publish
-# a prebuilt binary. The name stays azguard. Homebrew requires Casks/, so
-# this writes Casks/azguard.rb and leaves Formula/azguard.rb untouched.
-homebrew_casks:
-  - name: azguard
-    binaries:
-      - azguard
-    directory: Casks
-    homepage: https://azguard.dev
-    description: Find and clean up forgotten and AI-agent-created cloud resources on Azure and AWS.
-    license: MIT
-    # Unsigned binaries are quarantined on macOS. This is the hook current
-    # GoReleaser docs recommend so the installed binary can run.
-    hooks:
-      post:
-        install_steps: |
-          on_macos do
-            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/azguard"]
-          end
-    commit_author:
-      name: azguard-releaser
-      email: noreply@azguard.dev
-    repository:
-      owner: cdobratz
-      name: homebrew-azguard
-      branch: main
-      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
-    # index tolerates a missing key. An empty or unset token renders true
-    # and skips the tap commit. A set token renders false and publishes.
-    skip_upload: '{{ if index .Env "TAP_GITHUB_TOKEN" }}false{{ else }}true{{ end }}'
-
+# Homebrew Formula/azguard.rb is updated by scripts/package-repos.sh after
+# this release, not by GoReleaser. brews is deprecated and a cask would
+# replace the formula people already install.
 scoops:
   - name: azguard
     directory: bucket

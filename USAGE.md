@@ -28,7 +28,7 @@ scoop install azguard
 
 ### Homebrew (macOS and Linux)
 
-The tap is `cdobratz/azguard` and the formula is `azguard` (`Formula/azguard.rb` in `cdobratz/homebrew-azguard`). A tagged release publishes a cask at `Casks/azguard.rb` and does not remove that formula. Until the formula is removed, keep the command below. See [UPDATE.md](UPDATE.md).
+The tap is `cdobratz/azguard` and the formula is `azguard` (`Formula/azguard.rb` in `cdobratz/homebrew-azguard`). A tagged release updates that formula. See [UPDATE.md](UPDATE.md).
 
 ```bash
 brew install cdobratz/azguard/azguard
