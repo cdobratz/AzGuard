@@ -169,6 +169,10 @@ azguard guard report --fixture activity.json
 # Stdio MCP server for prevention checks (idle resources, preflight, approximate prices)
 azguard mcp serve
 
+# Approximate monthly price of a plan or a command (JSON on stdout)
+azguard preflight --plan plan.json
+azguard preflight --command "aws ec2 run-instances --instance-type t3.micro"
+
 # Dry run: list what cleanup would delete (id, type, region, age, cost)
 azguard cleanup
 azguard cleanup --type disk --region eastus --older-than 30d

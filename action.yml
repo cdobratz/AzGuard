@@ -1,0 +1,58 @@
+name: AzGuard
+description: >-
+  Comment on a pull request with billable resources in a Terraform plan and
+  idle-resource findings, and fail when the approximate monthly estimate
+  exceeds a budget. Prices are AzGuard's bundled table, not a full
+  infrastructure estimate. Use Infracost for that
+  (https://www.infracost.io/).
+inputs:
+  budget:
+    description: >-
+      Fail when the approximate monthly USD is greater than this number.
+      Leave empty to comment without failing.
+    required: false
+    default: ""
+  plan:
+    description: Path to terraform show -json output.
+    required: false
+    default: plan.json
+  version:
+    description: AzGuard release to download (latest, or a tag such as v1.2.0).
+    required: false
+    default: latest
+  github-token:
+    description: Token used to post or update the pull request comment.
+    required: false
+    default: ${{ github.token }}
+  scan-idle:
+    description: >-
+      When true, include idle-resource findings if cloud credentials are
+      already configured. A missing login is reported and does not fail the job.
+    required: false
+    default: "false"
+  comment:
+    description: When true, post or update one pull request comment.
+    required: false
+    default: "true"
+outputs:
+  monthly_usd:
+    description: Approximate monthly USD from the Terraform plan. Zero when no plan was read.
+    value: ${{ steps.run.outputs.monthly_usd }}
+  exceeded:
+    description: true when the estimate exceeded the budget.
+    value: ${{ steps.run.outputs.exceeded }}
+runs:
+  using: composite
+  steps:
+    - name: Run AzGuard
+      id: run
+      shell: bash
+      env:
+        INPUT_BUDGET: ${{ inputs.budget }}
+        INPUT_PLAN: ${{ inputs.plan }}
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_SCAN_IDLE: ${{ inputs.scan-idle }}
+        INPUT_COMMENT: ${{ inputs.comment }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: bash "$GITHUB_ACTION_PATH/action/run.sh"

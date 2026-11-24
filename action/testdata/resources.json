@@ -1,0 +1,13 @@
+{
+  "schema": "azguard.findings.v1",
+  "findings": [
+    {
+      "resource_id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Compute/disks/orphan",
+      "name": "orphan",
+      "rule_id": "azure.disk.unattached",
+      "estimated_monthly_usd": 5.89
+    }
+  ],
+  "total_estimated_monthly_usd": 5.89,
+  "errors": []
+}
