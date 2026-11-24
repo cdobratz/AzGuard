@@ -165,6 +165,9 @@ azguard watch --webhook "$AZGUARD_WEBHOOK"
 azguard guard --budget 25 -- aws ec2 run-instances --instance-type t3.micro
 azguard guard report --fixture activity.json
 
+# Stdio MCP server for prevention checks (idle resources, preflight, approximate prices)
+azguard mcp serve
+
 # Dry run: list what cleanup would delete (id, type, region, age, cost)
 azguard cleanup
 azguard cleanup --type disk --region eastus --older-than 30d
@@ -183,6 +186,24 @@ azguard config list
 # Set config
 azguard config set subscription YOUR_SUB_ID
 ```
+
+### MCP server
+
+`azguard mcp serve` speaks the Model Context Protocol on stdin and stdout. The tools are for prevention. They do not look up current spend.
+
+Prices are the bundled list-price table (730 hours per month). They are approximate and are not an invoice.
+
+| Tool | Input | Output |
+|------|-------|--------|
+| `list_idle_resources` | `cloud` (optional): `all`, `azure`, or `aws` | Idle and orphaned findings, same rules as `azguard resources` |
+| `list_new_billable_resources` | `since` (required, RFC3339), `principal` (optional) | Billable creates from the Activity Log and CloudTrail |
+| `check_free_or_credit_status` | `cloud` (optional) | Bundled free-tier limits and credit stored by `azguard init` |
+| `estimate_monthly_cost` | `provider` and `kind` (required). `sku`, `quantity`, and `region` optional | Approximate monthly price for one resource |
+| `preflight` | `input`, or `command` plus `plan` | A sentence such as "this will create a NAT Gateway at about $32.85/month" |
+
+`preflight` input may be `terraform show -json` output, or a command such as `az vm create -g rg -n vm --size Standard_B1s` or `aws ec2 run-instances --instance-type t3.micro`. A read-only command is reported as not billable.
+
+`kind` for `estimate_monthly_cost` is one of `vm`, `nat_gateway`, `public_ip`, `disk`, `ebs`, `instance`, `load_balancer`, `vpc_endpoint`, `snapshot`, or `app_service_plan`. `quantity` is a count, or a size in GB for disks, volumes, and snapshots.
 
 ---
 

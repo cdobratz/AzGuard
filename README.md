@@ -85,6 +85,7 @@ azguard scan
 | `azguard resources` | Find idle and orphaned resources, with a monthly cost estimate |
 | `azguard watch` | Poll for new billable resources and alert |
 | `azguard guard` | Block billable commands that exceed a session budget |
+| `azguard mcp serve` | Stdio MCP server for prevention checks (idle resources, preflight, approximate prices) |
 | `azguard status` | Spend, account type, and any credit stored by `azguard init` |
 | `azguard scan` | Compare recorded usage with Azure free-tier limits |
 | `azguard budget add [amount]` | Add a budget alert ($1-$100) |
@@ -391,6 +392,30 @@ Claude Code can call the same check as a `PreToolUse` hook. The hook writes `hoo
 ```
 
 The session file is `~/.azguard/guard-session.json`. Report permissions are the same read-only Activity Log and `cloudtrail:LookupEvents` permissions as `watch`.
+
+## MCP server
+
+`azguard mcp serve` speaks the Model Context Protocol on stdin and stdout. It is a prevention tool. It does not look up current spend, and it does not delete anything.
+
+Prices come from the bundled list-price table (730 hours per month). The figure is approximate and is not an invoice. Common rows include a NAT gateway at about $32.85/month, a public IPv4 address at about $3.65/month, and a `t3.micro` or `Standard_B1s` at about $7.59/month.
+
+```bash
+azguard mcp serve
+```
+
+Point an MCP client at that command. The server does not register itself in a public MCP registry.
+
+| Tool | Arguments | What it returns |
+|------|-----------|-----------------|
+| `list_idle_resources` | `cloud` optional: `all` (default), `azure`, or `aws` | Idle and orphaned findings from the same rules as `azguard resources` |
+| `list_new_billable_resources` | `since` (RFC3339, required), `principal` optional | Billable creates from the Activity Log and CloudTrail at or after `since` |
+| `check_free_or_credit_status` | `cloud` optional | Bundled free-tier limits and any credit stored by `azguard init`. Not live usage |
+| `estimate_monthly_cost` | `provider`, `kind`, optional `sku`, `quantity`, `region` | Approximate monthly price for one resource spec |
+| `preflight` | `input`, or `command` and `plan` | A sentence such as "this will create a NAT Gateway at about $32.85/month" |
+
+`preflight` accepts a `terraform show -json` plan, or a command string such as `az vm create` or `aws ec2 run-instances`. `plan` is used when `command` is `terraform apply`, `pulumi up`, or `cdk deploy`. Read-only commands are reported as not billable.
+
+`list_idle_resources` and `list_new_billable_resources` use the same read-only permissions as `azguard resources` and `azguard watch`. When credentials are missing, the tool says so and does not invent findings.
 
 ## How It Works
 

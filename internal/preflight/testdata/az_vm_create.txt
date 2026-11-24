@@ -1,0 +1,1 @@
+az vm create -g rg -n vm --size Standard_B1s
