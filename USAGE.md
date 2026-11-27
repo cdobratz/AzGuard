@@ -93,7 +93,7 @@ azguard aws resources
 azguard aws cost
 ```
 
-`azguard budget add` accepts an amount from 1 to 100 and stores the alert as `budget-<amount>`, for example `budget-5`. `azguard cost history` has no `--days` flag. The window is fixed in the CLI.
+`azguard budget add` accepts an amount from 1 to 100 and stores the alert as `budget-<amount>`, for example `budget-5`. `azguard cost history` has no `--days` flag. It shows cost for the last 30 days.
 
 The root `--output` (or `-o`) flag is `table`, `json`, or `csv`. `azguard resources`, `azguard cleanup`, and `azguard cost current` / `azguard cost history` honor it. `azguard status` and `azguard scan` print text even if you pass `-o json`. For cost JSON, the total field is `total_cost`.
 
