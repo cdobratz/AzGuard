@@ -178,7 +178,9 @@ publish() {
 
   local work sums
   work="$(mktemp -d)"
-  trap 'rm -rf "$work"' RETURN
+  # RETURN traps are not function-scoped. Clear this one after it runs so a
+  # later return does not expand work after it has gone out of scope.
+  trap 'rm -rf "${work:-}"; trap - RETURN' RETURN
   if [[ -n "$checksums" ]]; then
     sums="$checksums"
   else

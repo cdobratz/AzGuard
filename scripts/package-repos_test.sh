@@ -46,6 +46,44 @@ grep -F 'bearer ' <<<"$recorded" >/dev/null && exit 1
 grep -F "$token" <<<"$recorded" >/dev/null && exit 1
 true
 
+# publish must exit 0 after both repos. A RETURN trap that outlives publish
+# fails here with "work: unbound variable" once main returns.
+publish_bin="${tmp}/publish-bin"
+mkdir -p "$publish_bin"
+cat > "${publish_bin}/git" <<'EOF'
+#!/bin/bash
+if [[ "${1:-}" == "-c" ]]; then
+  shift 2
+fi
+if [[ "${1:-}" == "clone" ]]; then
+  dest="${*: -1}"
+  mkdir -p "$dest/Formula" "$dest/bucket"
+  if [[ -n "${SCOOP_FIXTURE:-}" ]]; then
+    cp "$SCOOP_FIXTURE" "$dest/bucket/azguard.json"
+  fi
+  exit 0
+fi
+exit 0
+EOF
+chmod +x "${publish_bin}/git"
+set +e
+publish_out="$(
+  PATH="${publish_bin}:${PATH}" \
+  TAP_GITHUB_TOKEN="$token" \
+  SCOOP_FIXTURE="${DATA}/scoop-before.json" \
+  "$SCRIPT" publish --tag v1.2.0 --checksums "${DATA}/v1.2.0-checksums.txt" --formula --scoop
+)"
+publish_code=$?
+set -e
+if [[ "$publish_code" -ne 0 ]]; then
+  printf '%s\n' "$publish_out" >&2
+  echo "publish exited ${publish_code}" >&2
+  exit 1
+fi
+[[ "$publish_out" == *"unchanged Formula/azguard.rb"* ]]
+[[ "$publish_out" == *"scoop updated"* ]]
+[[ "$publish_out" != *"unbound variable"* ]]
+
 cp "${DATA}/scoop-before.json" "${tmp}/azguard.json"
 status="$(python3 "$PY" --tag v1.2.0 --checksums "${DATA}/v1.2.0-checksums.txt" --manifest "${tmp}/azguard.json")"
 [[ "$status" == "updated" ]]
