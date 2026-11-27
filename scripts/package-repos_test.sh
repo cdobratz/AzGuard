@@ -23,6 +23,29 @@ grep -F 'version "1.2.0"' "${tmp}/formula.rb" >/dev/null
 skip_out="$(TAP_GITHUB_TOKEN= "$SCRIPT" publish --tag v1.2.0 --checksums "${DATA}/v1.2.0-checksums.txt" --formula --scoop)"
 [[ "$skip_out" == *"TAP_GITHUB_TOKEN is empty"* ]]
 
+# GitHub git HTTPS wants Basic auth. A Bearer PAT gets 401 and git prompts.
+token='test-token'
+want="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$token" | base64 | tr -d '\n')"
+header="$(TAP_GITHUB_TOKEN="$token" bash -c 'source "$1"; git_basic_header' _ "$SCRIPT")"
+[[ "$header" == "$want" ]]
+[[ "$header" != *'bearer '* ]]
+[[ "$header" != *"$token"* ]]
+
+bindir="${tmp}/bin"
+mkdir -p "$bindir"
+cat > "${bindir}/git" <<'EOF'
+#!/bin/bash
+printf 'PROMPT=%s\n' "${GIT_TERMINAL_PROMPT-unset}"
+printf '%s\n' "$@"
+EOF
+chmod +x "${bindir}/git"
+recorded="$(PATH="${bindir}:${PATH}" TAP_GITHUB_TOKEN="$token" bash -c 'source "$1"; with_auth status' _ "$SCRIPT")"
+[[ "$(printf '%s\n' "$recorded" | head -n 1)" == "PROMPT=0" ]]
+grep -F "http.extraHeader=${want}" <<<"$recorded" >/dev/null
+grep -F 'bearer ' <<<"$recorded" >/dev/null && exit 1
+grep -F "$token" <<<"$recorded" >/dev/null && exit 1
+true
+
 cp "${DATA}/scoop-before.json" "${tmp}/azguard.json"
 status="$(python3 "$PY" --tag v1.2.0 --checksums "${DATA}/v1.2.0-checksums.txt" --manifest "${tmp}/azguard.json")"
 [[ "$status" == "updated" ]]
