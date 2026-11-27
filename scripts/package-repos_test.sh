@@ -13,12 +13,18 @@ trap 'rm -rf "$tmp"' EXIT
 "$SCRIPT" render-formula --tag v1.2.0 --checksums "${DATA}/v1.2.0-checksums.txt" > "${tmp}/formula.rb"
 diff -u "${DATA}/v1.2.0-formula.rb" "${tmp}/formula.rb"
 
-# The class, install, test, and license stay on the lines the tap already uses.
+# The class, install, test, and license stay. version comes before license
+# (Homebrew FormulaAudit/ComponentsOrder).
 grep -F 'class Azguard < Formula' "${tmp}/formula.rb" >/dev/null
 grep -F 'license "MIT"' "${tmp}/formula.rb" >/dev/null
 grep -F 'bin.install "azguard"' "${tmp}/formula.rb" >/dev/null
 grep -F 'system bin/"azguard", "--version"' "${tmp}/formula.rb" >/dev/null
 grep -F 'version "1.2.0"' "${tmp}/formula.rb" >/dev/null
+awk '
+  /version "1.2.0"/ { v = NR }
+  /license "MIT"/ { l = NR }
+  END { if (!(v && l && v < l)) exit 1 }
+' "${tmp}/formula.rb"
 
 skip_out="$(TAP_GITHUB_TOKEN= "$SCRIPT" publish --tag v1.2.0 --checksums "${DATA}/v1.2.0-checksums.txt" --formula --scoop)"
 [[ "$skip_out" == *"TAP_GITHUB_TOKEN is empty"* ]]

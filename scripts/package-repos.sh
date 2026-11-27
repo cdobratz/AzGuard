@@ -67,8 +67,8 @@ render_formula() {
 class Azguard < Formula
   desc "One command so Azure and AWS free tiers don't surprise you with a bill"
   homepage "https://github.com/cdobratz/AzGuard"
-  license "MIT"
   version "${ver}"
+  license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
