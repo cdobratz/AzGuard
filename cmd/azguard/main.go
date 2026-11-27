@@ -428,7 +428,7 @@ func costCmd() *cobra.Command {
 
 	cmd.AddCommand(&cobra.Command{
 		Use:   "history",
-		Short: "Show cost history",
+		Short: "Show cost for the last 30 days",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			summary, err := costSvc.GetCostHistory(30)
 			if err != nil {

@@ -64,9 +64,18 @@ func TestServiceSummariesTrendsAndForecast(t *testing.T) {
 		t.Fatalf("forecast = %+v", summary.Forecast)
 	}
 
+	now := time.Now().UTC()
+	orig := timeNow
+	t.Cleanup(func() { timeNow = orig })
+	timeNow = func() time.Time { return now }
 	history, err := svc.GetCostHistory(6)
 	if err != nil {
 		t.Fatal(err)
+	}
+	wantStart := now.AddDate(0, 0, -6).Format("2006-01-02")
+	wantEnd := now.Format("2006-01-02")
+	if history.Period != wantStart+" to "+wantEnd {
+		t.Fatalf("history period = %s, want %s to %s", history.Period, wantStart, wantEnd)
 	}
 	if history.TotalCost != 5.75 || len(history.MonthlyBreakdown) == 0 {
 		t.Fatalf("history = %+v", history)
@@ -82,6 +91,42 @@ func TestServiceSummariesTrendsAndForecast(t *testing.T) {
 
 	if err := svc.FetchAndStoreCosts(ctx, "2026-01-01", "2026-02-01"); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestGetCostHistoryWindowIsLastNDays(t *testing.T) {
+	orig := timeNow
+	t.Cleanup(func() { timeNow = orig })
+	timeNow = func() time.Time { return time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC) }
+
+	db := newTestDB(t)
+	records := []storage.CostRecord{
+		{SubscriptionID: "sub", ResourceGroup: "rg", ServiceName: "Storage", Cost: 2, Currency: "USD", Date: "2026-05-16"},
+		{SubscriptionID: "sub", ResourceGroup: "rg", ServiceName: "Storage", Cost: 9, Currency: "USD", Date: "2026-05-15"},
+		{SubscriptionID: "sub", ResourceGroup: "rg", ServiceName: "Storage", Cost: 4, Currency: "USD", Date: "2026-06-15"},
+	}
+	today := time.Now().UTC().Format("2006-01-02")
+	if today < "2026-05-16" || today > "2026-06-15" {
+		records = append(records, storage.CostRecord{
+			SubscriptionID: "sub", ResourceGroup: "rg", ServiceName: "Storage", Cost: 7, Currency: "USD", Date: today,
+		})
+	}
+	if err := db.SaveCostRecords(records); err != nil {
+		t.Fatal(err)
+	}
+
+	history, err := NewService(db, failingAzure()).GetCostHistory(30)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if history.Period != "2026-05-16 to 2026-06-15" {
+		t.Fatalf("period = %s", history.Period)
+	}
+	if history.TotalCost != 6 {
+		t.Fatalf("total = %v, want 6 from 2026-05-16 and 2026-06-15", history.TotalCost)
+	}
+	if len(history.MonthlyBreakdown) == 0 {
+		t.Fatal("monthly breakdown should still come from the local database")
 	}
 }
 

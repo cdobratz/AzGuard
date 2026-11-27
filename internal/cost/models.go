@@ -75,6 +75,15 @@ func GetLastNMonths(n int) (startDate, endDate string) {
 	return
 }
 
+// GetLastNDays returns the inclusive calendar window ending today.
+// startDate is n days before now (AddDate(0, 0, -n)), not n months.
+func GetLastNDays(n int) (startDate, endDate string) {
+	now := timeNow()
+	endDate = now.Format("2006-01-02")
+	startDate = now.AddDate(0, 0, -n).Format("2006-01-02")
+	return
+}
+
 func GetCurrentMonthDateRange() (startDate, endDate string) {
 	now := timeNow()
 	startDate = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
