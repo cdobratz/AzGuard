@@ -19,6 +19,10 @@ func TestBillingPeriods(t *testing.T) {
 	if start != "2026-03-15" || end != "2026-06-15" {
 		t.Fatalf("last n %s %s", start, end)
 	}
+	start, end = GetLastNDays(30)
+	if start != "2026-05-16" || end != "2026-06-15" {
+		t.Fatalf("last 30 days %s %s", start, end)
+	}
 	start, end = GetCurrentMonthDateRange()
 	if start != "2026-06-01" || end != "2026-07-01" {
 		t.Fatalf("june range %s %s", start, end)
@@ -31,5 +35,11 @@ func TestBillingPeriods(t *testing.T) {
 	}
 	if strings.Contains(start, " ") {
 		t.Fatalf("date should be a calendar day: %s", start)
+	}
+
+	timeNow = func() time.Time { return time.Date(2026, 1, 10, 8, 0, 0, 0, time.UTC) }
+	start, end = GetLastNDays(30)
+	if start != "2025-12-11" || end != "2026-01-10" {
+		t.Fatalf("last 30 days across new year %s %s", start, end)
 	}
 }

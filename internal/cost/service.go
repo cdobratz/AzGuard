@@ -125,8 +125,10 @@ func (s *Service) GetCurrentCosts(ctx context.Context) (*CostSummary, error) {
 	return summary, nil
 }
 
+// GetCostHistory summarizes stored costs for the last `days` calendar days.
+// MonthlyBreakdown stays the last 12 months from the local database.
 func (s *Service) GetCostHistory(days int) (*CostSummary, error) {
-	startDate, endDate := GetLastNMonths(days)
+	startDate, endDate := GetLastNDays(days)
 
 	summary, err := s.GetCostSummary(CostFilter{
 		StartDate: startDate,
