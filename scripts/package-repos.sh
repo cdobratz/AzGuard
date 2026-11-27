@@ -107,9 +107,14 @@ download_checksums() {
   curl -fsSL "${REPO}/releases/download/${tag}/checksums.txt" -o "$dest"
 }
 
+# GitHub's git HTTPS endpoint accepts a PAT as Basic auth, not Bearer.
+# The header is passed with git -c so it is not stored in .git/config or the remote URL.
+git_basic_header() {
+  printf 'AUTHORIZATION: basic %s' "$(printf 'x-access-token:%s' "$TAP_GITHUB_TOKEN" | base64 | tr -d '\n')"
+}
+
 with_auth() {
-  # -c keeps the token out of .git/config and the remote URL.
-  git -c "http.extraHeader=AUTHORIZATION: bearer ${TAP_GITHUB_TOKEN}" "$@"
+  GIT_TERMINAL_PROMPT=0 git -c "http.extraHeader=$(git_basic_header)" "$@"
 }
 
 commit_if_changed() {
@@ -168,6 +173,8 @@ publish() {
     echo "TAP_GITHUB_TOKEN is empty; skipping Homebrew and Scoop updates"
     exit 0
   fi
+  # Fail immediately if git would otherwise prompt for a username.
+  export GIT_TERMINAL_PROMPT=0
 
   local work sums
   work="$(mktemp -d)"
@@ -241,4 +248,6 @@ main() {
   esac
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi
